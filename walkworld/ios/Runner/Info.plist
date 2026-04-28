@@ -28,6 +28,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>运动记录需要持续获取您的位置信息，用于绘制轨迹和统计距离。</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>运动记录需要访问您的位置信息，用于绘制轨迹和统计距离。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

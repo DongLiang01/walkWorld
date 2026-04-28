@@ -1,10 +1,13 @@
 import Flutter
 import AMapFoundationKit
+import AMapLocationKit
 import MAMapKit
 import UIKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  private var motionNativeBridge: MotionNativeBridge?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -19,6 +22,7 @@ import UIKit
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MotionMapViewFactory") {
       let factory = MotionMapViewFactory(messenger: registrar.messenger())
       registrar.register(factory, withId: "walkworld/motion_map_view")
+      motionNativeBridge = MotionNativeBridge(messenger: registrar.messenger())
     }
   }
 
@@ -33,6 +37,8 @@ import UIKit
   private func configureAMapIfNeeded() {
     MAMapView.updatePrivacyShow(.didShow, privacyInfo: .didContain)
     MAMapView.updatePrivacyAgree(.didAgree)
+    AMapLocationManager.updatePrivacyShow(.didShow, privacyInfo: .didContain)
+    AMapLocationManager.updatePrivacyAgree(.didAgree)
 
     guard let apiKey = Bundle.main.object(forInfoDictionaryKey: "AMapApiKey") as? String,
           !apiKey.isEmpty,
@@ -41,7 +47,7 @@ import UIKit
       return
     }
 
-      AMapServices.shared().apiKey = apiKey
-      AMapServices.shared().enableHTTPS = true
+    AMapServices.shared().apiKey = apiKey
+    AMapServices.shared().enableHTTPS = true
   }
 }
