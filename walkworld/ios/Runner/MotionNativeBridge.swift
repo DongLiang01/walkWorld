@@ -5,10 +5,10 @@ import Foundation
 
 /// 负责运动模块在 iOS 侧的 MethodChannel / EventChannel / 定位能力接入。
 ///
-/// 当前阶段先完成 Step 5 所需的最小闭环：
+/// 当前阶段先完成 Step 6 所需的最小闭环：
 /// 1. 定位权限申请与状态回传
 /// 2. 系统定位服务开关检查
-/// 3. 持续定位监听
+/// 3. 持续定位监听与实时事件推送
 /// 4. 为现有 Flutter 控制器补齐最小可用的运动命令状态机
 final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   private enum MotionMethod {
@@ -34,6 +34,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     static let running = "running"
     static let paused = "paused"
     static let finished = "finished"
+    static let error = "error"
   }
 
   private let methodChannel: FlutterMethodChannel
@@ -52,6 +53,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   private var pauseStartedAtMillis: Int64?
   private var totalDistanceMeters: Double = 0
   private var recordedLocations: [CLLocation] = []
+  private var realtimeTicker: Timer?
 
   init(messenger: FlutterBinaryMessenger) {
     self.methodChannel = FlutterMethodChannel(
@@ -188,6 +190,8 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
 
     locationManager.startUpdatingLocation()
     pushStatusChangedEvent()
+    pushMotionUpdatedEvent()
+    startRealtimeTickerIfNeeded()
 
     result([
       "accepted": true,
@@ -211,7 +215,9 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     currentStatus = MotionStatusValue.paused
     pauseStartedAtMillis = currentTimestampMillis()
     locationManager.stopUpdatingLocation()
+    stopRealtimeTicker()
     pushStatusChangedEvent()
+    pushMotionUpdatedEvent()
 
     result([
       "accepted": true,
@@ -239,6 +245,8 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
 
     locationManager.startUpdatingLocation()
     pushStatusChangedEvent()
+    pushMotionUpdatedEvent()
+    startRealtimeTickerIfNeeded()
 
     result([
       "accepted": true,
@@ -266,6 +274,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     }
 
     locationManager.stopUpdatingLocation()
+    stopRealtimeTicker()
     currentStatus = MotionStatusValue.finished
     let endTimeMillis = currentTimestampMillis()
     let durationSeconds = currentDurationSeconds(referenceTimeMillis: endTimeMillis)
@@ -284,6 +293,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     ]
 
     pushStatusChangedEvent()
+    pushMotionUpdatedEvent(referenceTimeMillis: endTimeMillis)
 
     result([
       "accepted": true,
@@ -316,21 +326,15 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
 
     let locationPayload = buildLocationPayload(location)
     pushEvent(name: MotionEvent.locationUpdated, payload: locationPayload)
-    pushEvent(
-      name: MotionEvent.motionUpdated,
-      payload: compactDictionary([
-        "status": currentStatus,
-        "durationSeconds": currentDurationSeconds(referenceTimeMillis: currentTimestampMillis()),
-        "distanceMeters": totalDistanceMeters,
-        "currentSpeedMps": normalizedSpeed(from: location),
-        "averageSpeedMps": buildAverageSpeed(),
-        "pointCount": recordedLocations.count,
-        "latestPoint": locationPayload
-      ])
-    )
+    pushMotionUpdatedEvent(latestLocation: location)
   }
 
   private func handleLocationError(_ error: NSError) {
+    stopRealtimeTicker()
+    currentStatus = MotionStatusValue.error
+
+    pushStatusChangedEvent()
+    pushMotionUpdatedEvent()
     pushEvent(
       name: MotionEvent.error,
       payload: [
@@ -338,6 +342,28 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
         "message": "原生定位更新失败。",
         "detail": error.localizedDescription
       ]
+    )
+  }
+
+  /// 将实时统计的组装逻辑收敛到一处，避免定位回调、状态切换、定时刷新各写一份。
+  private func pushMotionUpdatedEvent(
+    latestLocation: CLLocation? = nil,
+    referenceTimeMillis: Int64? = nil
+  ) {
+    let resolvedTimeMillis = referenceTimeMillis ?? currentTimestampMillis()
+    let latestPointPayload = latestLocation.map(buildLocationPayload)
+
+    pushEvent(
+      name: MotionEvent.motionUpdated,
+      payload: compactDictionary([
+        "status": currentStatus,
+        "durationSeconds": currentDurationSeconds(referenceTimeMillis: resolvedTimeMillis),
+        "distanceMeters": totalDistanceMeters,
+        "currentSpeedMps": normalizedSpeed(from: latestLocation ?? recordedLocations.last),
+        "averageSpeedMps": buildAverageSpeed(referenceTimeMillis: resolvedTimeMillis),
+        "pointCount": recordedLocations.count,
+        "latestPoint": latestPointPayload
+      ])
     )
   }
 
@@ -395,8 +421,8 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     ]
   }
 
-  private func buildAverageSpeed() -> Double? {
-    let durationSeconds = currentDurationSeconds(referenceTimeMillis: currentTimestampMillis())
+  private func buildAverageSpeed(referenceTimeMillis: Int64 = currentTimestampMillis()) -> Double? {
+    let durationSeconds = currentDurationSeconds(referenceTimeMillis: referenceTimeMillis)
     guard durationSeconds > 0 else {
       return nil
     }
@@ -427,6 +453,14 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     }
 
     return location.speed
+  }
+
+  private func normalizedSpeed(from location: CLLocation?) -> Double? {
+    guard let location else {
+      return nil
+    }
+
+    return normalizedSpeed(from: location)
   }
 
   private func isPermissionGranted(_ status: CLAuthorizationStatus) -> Bool {
@@ -485,12 +519,38 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   }
 
   private func resetWorkoutState() {
+    stopRealtimeTicker()
     currentSessionId = nil
     sessionStartTimeMillis = nil
     accumulatedPausedDurationMillis = 0
     pauseStartedAtMillis = nil
     totalDistanceMeters = 0
     recordedLocations.removeAll()
+  }
+
+  /// 运行中每秒补发一次统计，让 Flutter 的时长与均速不依赖新定位点才能刷新。
+  private func startRealtimeTickerIfNeeded() {
+    guard realtimeTicker == nil else {
+      return
+    }
+
+    realtimeTicker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+      guard let self else {
+        return
+      }
+
+      guard self.currentStatus == MotionStatusValue.running else {
+        self.stopRealtimeTicker()
+        return
+      }
+
+      self.pushMotionUpdatedEvent()
+    }
+  }
+
+  private func stopRealtimeTicker() {
+    realtimeTicker?.invalidate()
+    realtimeTicker = nil
   }
 
   private func currentTimestampMillis() -> Int64 {
@@ -508,11 +568,22 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
     eventSink = events
     pushPermissionChangedEvent(status: currentAuthorizationStatus())
+    pushStatusChangedEvent()
+
+    if currentStatus != MotionStatusValue.idle {
+      pushMotionUpdatedEvent()
+    }
+
+    if currentStatus == MotionStatusValue.running {
+      startRealtimeTickerIfNeeded()
+    }
+
     return nil
   }
 
   func onCancel(withArguments arguments: Any?) -> FlutterError? {
     eventSink = nil
+    stopRealtimeTicker()
     return nil
   }
 }

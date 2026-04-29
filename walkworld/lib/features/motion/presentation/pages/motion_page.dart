@@ -8,9 +8,9 @@ import '../widgets/motion_map_view.dart';
 
 /// 运动模块的调试页面入口。
 ///
-/// 当前阶段除了展示 iOS 原生地图，还额外承担 Step 5 的验收职责：
+/// 当前阶段除了展示 iOS 原生地图，还额外承担 Step 6 的验收职责：
 /// 1. 可直接触发权限申请与运动控制命令
-/// 2. 可直接看到 Flutter 是否持续收到原生定位事件
+/// 2. 可直接看到 Flutter 是否持续收到原生实时事件
 class MotionPage extends ConsumerStatefulWidget {
   const MotionPage({super.key});
 
@@ -92,7 +92,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Step 5 调试面板',
+                    'Step 6 调试面板',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -113,6 +113,12 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                   _DebugField(
                     label: '已收点数',
                     value: '${motionState.recordedPoints.length}',
+                  ),
+                  _DebugField(
+                    label: '运动时长',
+                    value: motionState.realtime == null
+                        ? '--'
+                        : '${motionState.realtime!.durationSeconds} s',
                   ),
                   _DebugField(
                     label: '实时距离',

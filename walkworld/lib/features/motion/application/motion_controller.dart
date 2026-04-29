@@ -82,7 +82,12 @@ class MotionController extends Notifier<MotionState> {
       currentSessionId: sessionId,
       sessionStartTime: null,
       recordedPoints: const [],
-      realtime: null,
+      realtime: const MotionRealtime(
+        status: MotionStatus.preparing,
+        durationSeconds: 0,
+        distanceMeters: 0,
+        pointCount: 0,
+      ),
       finishedSession: null,
       error: null,
     );
@@ -94,6 +99,14 @@ class MotionController extends Notifier<MotionState> {
         status: result.status,
         currentSessionId: sessionId,
         sessionStartTime: result.startTime,
+        realtime: (state.realtime ?? const MotionRealtime(
+          status: MotionStatus.running,
+          durationSeconds: 0,
+          distanceMeters: 0,
+          pointCount: 0,
+        )).copyWith(
+          status: result.status,
+        ),
       );
     } catch (error) {
       _setError(
@@ -114,6 +127,7 @@ class MotionController extends Notifier<MotionState> {
       final result = await _motionService.pauseWorkout();
       state = state.copyWith(
         status: result.status,
+        realtime: state.realtime?.copyWith(status: result.status),
         error: null,
       );
     } catch (error) {
@@ -135,6 +149,7 @@ class MotionController extends Notifier<MotionState> {
       final result = await _motionService.resumeWorkout();
       state = state.copyWith(
         status: result.status,
+        realtime: state.realtime?.copyWith(status: result.status),
         error: null,
       );
     } catch (error) {
@@ -161,6 +176,16 @@ class MotionController extends Notifier<MotionState> {
         status: result.status,
         finishedSession: normalizedSession,
         recordedPoints: normalizedSession.points,
+        realtime: MotionRealtime(
+          status: result.status,
+          durationSeconds: normalizedSession.durationSeconds,
+          distanceMeters: normalizedSession.totalDistanceMeters,
+          averageSpeedMps: normalizedSession.averageSpeedMps,
+          pointCount: normalizedSession.points.length,
+          latestPoint: normalizedSession.points.isEmpty
+              ? null
+              : normalizedSession.points.last,
+        ),
         error: null,
       );
     } catch (error) {
