@@ -8,9 +8,10 @@ import '../widgets/motion_map_view.dart';
 
 /// 运动模块的调试页面入口。
 ///
-/// 当前阶段除了展示 iOS 原生地图，还额外承担 Step 6 的验收职责：
+/// 当前阶段除了展示 iOS 原生地图，还额外承担 Step 7 的联调与验收职责：
 /// 1. 可直接触发权限申请与运动控制命令
 /// 2. 可直接看到 Flutter 是否持续收到原生实时事件
+/// 3. 可直接验证开始、暂停、继续、结束这条核心交互链路
 class MotionPage extends ConsumerStatefulWidget {
   const MotionPage({super.key});
 
@@ -32,11 +33,25 @@ class _MotionPageState extends ConsumerState<MotionPage> {
   Widget build(BuildContext context) {
     final motionState = ref.watch(motionControllerProvider);
     final controller = ref.read(motionControllerProvider.notifier);
+    final theme = Theme.of(context);
     final latestPoint =
         motionState.realtime?.latestPoint ??
         (motionState.recordedPoints.isNotEmpty
             ? motionState.recordedPoints.last
             : null);
+    final canRequestPermission = motionState.status != MotionStatus.preparing;
+    final canStart = motionState.status == MotionStatus.idle ||
+        motionState.status == MotionStatus.finished ||
+        motionState.status == MotionStatus.error;
+    final canPause = motionState.status == MotionStatus.running;
+    final canResume = motionState.status == MotionStatus.paused;
+    final canStop = motionState.status == MotionStatus.running ||
+        motionState.status == MotionStatus.paused;
+    final panelTitle = switch (motionState.status) {
+      MotionStatus.finished => 'Step 7 结果面板',
+      MotionStatus.error => 'Step 7 异常面板',
+      _ => 'Step 7 交互调试面板',
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -69,31 +84,53 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                     runSpacing: 8,
                     children: [
                       OutlinedButton(
-                        onPressed: controller.requestLocationPermission,
+                        onPressed: canRequestPermission
+                            ? controller.requestLocationPermission
+                            : null,
                         child: const Text('请求权限'),
                       ),
                       FilledButton(
-                        onPressed: controller.startWorkout,
+                        onPressed: canStart ? controller.startWorkout : null,
                         child: const Text('开始'),
                       ),
                       OutlinedButton(
-                        onPressed: controller.pauseWorkout,
+                        onPressed: canPause ? controller.pauseWorkout : null,
                         child: const Text('暂停'),
                       ),
                       OutlinedButton(
-                        onPressed: controller.resumeWorkout,
+                        onPressed: canResume ? controller.resumeWorkout : null,
                         child: const Text('继续'),
                       ),
                       OutlinedButton(
-                        onPressed: controller.stopWorkout,
+                        onPressed: canStop ? controller.stopWorkout : null,
                         child: const Text('结束'),
                       ),
+                      if (motionState.error != null)
+                        TextButton(
+                          onPressed: controller.clearError,
+                          child: const Text('清除错误'),
+                        ),
+                      if (motionState.status == MotionStatus.finished)
+                        TextButton(
+                          onPressed: controller.startWorkout,
+                          child: const Text('再来一次'),
+                        ),
+                      if (motionState.status == MotionStatus.error && canStart)
+                        TextButton(
+                          onPressed: controller.startWorkout,
+                          child: const Text('重新开始'),
+                        ),
+                      if (motionState.status == MotionStatus.paused)
+                        TextButton(
+                          onPressed: controller.stopWorkout,
+                          child: const Text('暂停后结束'),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Step 6 调试面板',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    panelTitle,
+                    style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
                   _DebugField(
@@ -109,6 +146,14 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                     value: motionState.locationServiceEnabled == null
                         ? '未知'
                         : (motionState.locationServiceEnabled! ? '已开启' : '未开启'),
+                  ),
+                  _DebugField(
+                    label: '事件监听',
+                    value: motionState.isEventListening ? '已建立' : '未建立',
+                  ),
+                  _DebugField(
+                    label: '当前会话',
+                    value: motionState.currentSessionId ?? '--',
                   ),
                   _DebugField(
                     label: '已收点数',
@@ -133,6 +178,12 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                         : '${motionState.realtime!.currentSpeedMps!.toStringAsFixed(2)} m/s',
                   ),
                   _DebugField(
+                    label: '平均速度',
+                    value: motionState.realtime?.averageSpeedMps == null
+                        ? '--'
+                        : '${motionState.realtime!.averageSpeedMps!.toStringAsFixed(2)} m/s',
+                  ),
+                  _DebugField(
                     label: '最新时间',
                     value: latestPoint == null
                         ? '--'
@@ -150,13 +201,46 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                         ? '--'
                         : '${latestPoint!.accuracyMeters!.toStringAsFixed(1)} m',
                   ),
+                  if (motionState.finishedSession != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '本次结果',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 4),
+                    _DebugField(
+                      label: '开始时间',
+                      value: _formatTimestamp(
+                        motionState.finishedSession!.startTime,
+                      ),
+                    ),
+                    _DebugField(
+                      label: '结束时间',
+                      value: _formatTimestamp(
+                        motionState.finishedSession!.endTime,
+                      ),
+                    ),
+                    _DebugField(
+                      label: '总时长',
+                      value: '${motionState.finishedSession!.durationSeconds} s',
+                    ),
+                    _DebugField(
+                      label: '总距离',
+                      value:
+                          '${motionState.finishedSession!.totalDistanceMeters.toStringAsFixed(1)} m',
+                    ),
+                    _DebugField(
+                      label: '轨迹点数',
+                      value: '${motionState.finishedSession!.points.length}',
+                    ),
+                  ],
                   if (motionState.error != null) ...[
                     const SizedBox(height: 8),
                     Text(
                       '错误：${motionState.error!.code} ${motionState.error!.message}'
                       '${motionState.error!.detail == null ? '' : '\n${motionState.error!.detail}'}',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                        color: theme.colorScheme.error,
                       ),
                     ),
                   ],

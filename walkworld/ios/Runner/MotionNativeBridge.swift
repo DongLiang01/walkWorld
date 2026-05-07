@@ -421,8 +421,9 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     ]
   }
 
-  private func buildAverageSpeed(referenceTimeMillis: Int64 = currentTimestampMillis()) -> Double? {
-    let durationSeconds = currentDurationSeconds(referenceTimeMillis: referenceTimeMillis)
+  private func buildAverageSpeed(referenceTimeMillis: Int64? = nil) -> Double? {
+    let resolvedTimeMillis = referenceTimeMillis ?? currentTimestampMillis()
+    let durationSeconds = currentDurationSeconds(referenceTimeMillis: resolvedTimeMillis)
     guard durationSeconds > 0 else {
       return nil
     }

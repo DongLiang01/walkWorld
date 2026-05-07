@@ -95,6 +95,14 @@ class MotionController extends Notifier<MotionState> {
     try {
       final result = await _motionService.startWorkout(sessionId: sessionId);
 
+      if (!result.accepted) {
+        _setError(
+          code: 'start_workout_rejected',
+          message: '原生未接受开始运动命令。',
+        );
+        return;
+      }
+
       state = state.copyWith(
         status: result.status,
         currentSessionId: sessionId,
@@ -125,6 +133,15 @@ class MotionController extends Notifier<MotionState> {
 
     try {
       final result = await _motionService.pauseWorkout();
+
+      if (!result.accepted) {
+        _setError(
+          code: 'pause_workout_rejected',
+          message: '原生未接受暂停运动命令。',
+        );
+        return;
+      }
+
       state = state.copyWith(
         status: result.status,
         realtime: state.realtime?.copyWith(status: result.status),
@@ -147,6 +164,15 @@ class MotionController extends Notifier<MotionState> {
 
     try {
       final result = await _motionService.resumeWorkout();
+
+      if (!result.accepted) {
+        _setError(
+          code: 'resume_workout_rejected',
+          message: '原生未接受继续运动命令。',
+        );
+        return;
+      }
+
       state = state.copyWith(
         status: result.status,
         realtime: state.realtime?.copyWith(status: result.status),
@@ -170,12 +196,22 @@ class MotionController extends Notifier<MotionState> {
 
     try {
       final result = await _motionService.stopWorkout();
+
+      if (!result.accepted) {
+        _setError(
+          code: 'stop_workout_rejected',
+          message: '原生未接受结束运动命令。',
+        );
+        return;
+      }
+
       final normalizedSession = _normalizeFinishedSession(result.summary);
 
       state = state.copyWith(
         status: result.status,
         finishedSession: normalizedSession,
         recordedPoints: normalizedSession.points,
+        currentSessionId: null,
         realtime: MotionRealtime(
           status: result.status,
           durationSeconds: normalizedSession.durationSeconds,
@@ -186,6 +222,7 @@ class MotionController extends Notifier<MotionState> {
               ? null
               : normalizedSession.points.last,
         ),
+        sessionStartTime: normalizedSession.startTime,
         error: null,
       );
     } catch (error) {
@@ -234,6 +271,9 @@ class MotionController extends Notifier<MotionState> {
             MotionStatusX.fromValue(event.payload['status'] as String? ?? '');
         state = state.copyWith(
           status: status,
+          currentSessionId: status == MotionStatus.finished
+              ? null
+              : state.currentSessionId,
           error: null,
         );
         break;
@@ -295,10 +335,26 @@ class MotionController extends Notifier<MotionState> {
     final fallbackStartTime = state.sessionStartTime ?? session.startTime;
     final fallbackPoints =
         session.points.isEmpty ? state.recordedPoints : session.points;
+    final fallbackEndTime = session.endTime == 0
+        ? DateTime.now().millisecondsSinceEpoch
+        : session.endTime;
+    final fallbackDurationSeconds = session.durationSeconds > 0
+        ? session.durationSeconds
+        : state.realtime?.durationSeconds ?? 0;
+    final fallbackDistanceMeters = session.totalDistanceMeters > 0
+        ? session.totalDistanceMeters
+        : state.realtime?.distanceMeters ?? 0;
+    final fallbackAverageSpeed = session.averageSpeedMps ??
+        state.realtime?.averageSpeedMps ??
+        state.realtime?.currentSpeedMps;
 
     return session.copyWith(
       sessionId: fallbackSessionId,
       startTime: fallbackStartTime,
+      endTime: fallbackEndTime,
+      durationSeconds: fallbackDurationSeconds,
+      totalDistanceMeters: fallbackDistanceMeters,
+      averageSpeedMps: fallbackAverageSpeed,
       points: fallbackPoints,
     );
   }
