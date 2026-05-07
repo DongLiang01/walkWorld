@@ -5,12 +5,26 @@ import Foundation
 
 /// 负责运动模块在 iOS 侧的 MethodChannel / EventChannel / 定位能力接入。
 ///
-/// 当前阶段先完成 Step 6 所需的最小闭环：
+/// 当前阶段主要承接 Step 8 的数据质量与异常处理：
 /// 1. 定位权限申请与状态回传
 /// 2. 系统定位服务开关检查
-/// 3. 持续定位监听与实时事件推送
-/// 4. 为现有 Flutter 控制器补齐最小可用的运动命令状态机
+/// 3. 持续定位监听、轨迹过滤与实时事件推送
+/// 4. 为 Flutter 侧提供可用的运动统计与基础错误处理
 final class MotionNativeBridge: NSObject, FlutterStreamHandler {
+  private enum MotionRuntimeConfig {
+    /// 超过这个水平精度的定位点直接丢弃，避免明显漂移污染轨迹。
+    static let maxAcceptedHorizontalAccuracy: CLLocationAccuracy = 65
+
+    /// 有效速度样本保留最近 5 个，用于做简单平滑。
+    static let smoothedSpeedSampleWindow = 5
+
+    /// 当两点推导出的速度超过这个阈值时，判定为跳点。
+    static let maxAcceptedDerivedSpeedMps: Double = 10
+
+    /// 两点时间间隔太短时，不参与跳点判定，避免时钟抖动带来的误杀。
+    static let minIntervalForJumpDetectionSeconds: TimeInterval = 1
+  }
+
   private enum MotionMethod {
     static let requestLocationPermission = "requestLocationPermission"
     static let getLocationServiceStatus = "getLocationServiceStatus"
@@ -53,6 +67,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   private var pauseStartedAtMillis: Int64?
   private var totalDistanceMeters: Double = 0
   private var recordedLocations: [CLLocation] = []
+  private var recentSpeedSamples: [Double] = []
   private var realtimeTicker: Timer?
 
   init(messenger: FlutterBinaryMessenger) {
@@ -305,6 +320,15 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   private func handleAuthorizationChanged(_ status: CLAuthorizationStatus) {
     pushPermissionChangedEvent(status: status)
 
+    if !isPermissionGranted(status),
+       currentStatus == MotionStatusValue.running || currentStatus == MotionStatusValue.paused {
+      transitionToError(
+        code: status == .denied ? "permission_denied" : "permission_denied_forever",
+        message: "运动过程中定位权限已不可用。",
+        detail: permissionStatusValue(for: status)
+      )
+    }
+
     guard let pendingPermissionResult, status != .notDetermined else {
       return
     }
@@ -318,11 +342,20 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
       return
     }
 
+    guard isLocationAccuracyAcceptable(location) else {
+      return
+    }
+
+    guard !isJumpLocation(location) else {
+      return
+    }
+
     if let lastLocation = recordedLocations.last {
       totalDistanceMeters += max(0, location.distance(from: lastLocation))
     }
 
     recordedLocations.append(location)
+    appendSpeedSampleIfNeeded(from: location)
 
     let locationPayload = buildLocationPayload(location)
     pushEvent(name: MotionEvent.locationUpdated, payload: locationPayload)
@@ -330,18 +363,10 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   }
 
   private func handleLocationError(_ error: NSError) {
-    stopRealtimeTicker()
-    currentStatus = MotionStatusValue.error
-
-    pushStatusChangedEvent()
-    pushMotionUpdatedEvent()
-    pushEvent(
-      name: MotionEvent.error,
-      payload: [
-        "code": errorCode(for: error),
-        "message": "原生定位更新失败。",
-        "detail": error.localizedDescription
-      ]
+    transitionToError(
+      code: errorCode(for: error),
+      message: "原生定位更新失败。",
+      detail: error.localizedDescription
     )
   }
 
@@ -359,7 +384,9 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
         "status": currentStatus,
         "durationSeconds": currentDurationSeconds(referenceTimeMillis: resolvedTimeMillis),
         "distanceMeters": totalDistanceMeters,
-        "currentSpeedMps": normalizedSpeed(from: latestLocation ?? recordedLocations.last),
+        "currentSpeedMps": buildSmoothedCurrentSpeed(
+          fallbackLocation: latestLocation ?? recordedLocations.last
+        ),
         "averageSpeedMps": buildAverageSpeed(referenceTimeMillis: resolvedTimeMillis),
         "pointCount": recordedLocations.count,
         "latestPoint": latestPointPayload
@@ -431,6 +458,15 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     return totalDistanceMeters / Double(durationSeconds)
   }
 
+  private func buildSmoothedCurrentSpeed(fallbackLocation: CLLocation?) -> Double? {
+    if !recentSpeedSamples.isEmpty {
+      let total = recentSpeedSamples.reduce(0, +)
+      return total / Double(recentSpeedSamples.count)
+    }
+
+    return normalizedSpeed(from: fallbackLocation)
+  }
+
   private func currentDurationSeconds(referenceTimeMillis: Int64) -> Int {
     guard let sessionStartTimeMillis else {
       return 0
@@ -462,6 +498,58 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     }
 
     return normalizedSpeed(from: location)
+  }
+
+  private func isLocationAccuracyAcceptable(_ location: CLLocation) -> Bool {
+    let horizontalAccuracy = location.horizontalAccuracy
+    guard horizontalAccuracy >= 0 else {
+      return false
+    }
+
+    return horizontalAccuracy <= MotionRuntimeConfig.maxAcceptedHorizontalAccuracy
+  }
+
+  private func isJumpLocation(_ location: CLLocation) -> Bool {
+    guard let lastLocation = recordedLocations.last else {
+      return false
+    }
+
+    let intervalSeconds = location.timestamp.timeIntervalSince(lastLocation.timestamp)
+    guard intervalSeconds >= MotionRuntimeConfig.minIntervalForJumpDetectionSeconds else {
+      return false
+    }
+
+    let distanceMeters = location.distance(from: lastLocation)
+    let derivedSpeedMps = distanceMeters / intervalSeconds
+    return derivedSpeedMps > MotionRuntimeConfig.maxAcceptedDerivedSpeedMps
+  }
+
+  private func appendSpeedSampleIfNeeded(from location: CLLocation) {
+    guard let speedMps = normalizedSpeed(from: location) else {
+      return
+    }
+
+    recentSpeedSamples.append(speedMps)
+    if recentSpeedSamples.count > MotionRuntimeConfig.smoothedSpeedSampleWindow {
+      recentSpeedSamples.removeFirst(recentSpeedSamples.count - MotionRuntimeConfig.smoothedSpeedSampleWindow)
+    }
+  }
+
+  private func transitionToError(code: String, message: String, detail: String?) {
+    locationManager.stopUpdatingLocation()
+    stopRealtimeTicker()
+    currentStatus = MotionStatusValue.error
+
+    pushStatusChangedEvent()
+    pushMotionUpdatedEvent()
+    pushEvent(
+      name: MotionEvent.error,
+      payload: [
+        "code": code,
+        "message": message,
+        "detail": detail
+      ]
+    )
   }
 
   private func isPermissionGranted(_ status: CLAuthorizationStatus) -> Bool {
@@ -526,6 +614,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     accumulatedPausedDurationMillis = 0
     pauseStartedAtMillis = nil
     totalDistanceMeters = 0
+    recentSpeedSamples.removeAll()
     recordedLocations.removeAll()
   }
 
