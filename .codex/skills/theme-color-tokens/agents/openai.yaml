@@ -1,0 +1,6 @@
+## 不是必要的，主要是说这个skill在对话框里怎么展示，UI作用
+version: 1
+interface:
+  display_name: Theme Color Tokens
+  short_description: 统一管理 Flutter 明暗主题色 token 的新增与使用约定
+  default_prompt: 当任务涉及新增、调整或使用白天/黑夜主题色值时，按项目主题 token 约定执行。
