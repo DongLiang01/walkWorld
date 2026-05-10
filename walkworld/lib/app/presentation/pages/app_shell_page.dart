@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../svg/svg.dart';
+import '../../theme/app_theme_tokens.dart';
 import '../../../features/home/presentation/pages/home_placeholder_page.dart';
 import '../../../features/motion/presentation/presentation.dart';
 import '../../../features/profile/presentation/pages/profile_placeholder_page.dart';
@@ -30,15 +31,14 @@ class _AppShellPageState extends State<AppShellPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tokens = Theme.of(context).extension<AppThemeTokens>()!;
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: _FigmaTabBar(
         currentIndex: _currentIndex,
         isDark: isDark,
+        tokens: tokens,
         onTap: _onTabChanged,
       ),
     );
@@ -117,28 +117,17 @@ class _FigmaTabBar extends StatelessWidget {
   const _FigmaTabBar({
     required this.currentIndex,
     required this.isDark,
+    required this.tokens,
     required this.onTap,
   });
 
   final int currentIndex;
   final bool isDark;
+  final AppThemeTokens tokens;
   final ValueChanged<int> onTap;
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = isDark
-        ? const Color(0xF7070B17)
-        : const Color(0xF7FFFFFF);
-    final borderColor = isDark
-        ? const Color(0x14FFFFFF)
-        : const Color(0x14000000);
-    final activeColor = isDark
-        ? const Color(0xFF00D4FF)
-        : const Color(0xFF1A6FDB);
-    final inactiveColor = isDark
-        ? const Color(0xFF3D5070)
-        : const Color(0xFF9CA3AF);
-
     final items = [
       (
         label: '首页',
@@ -156,13 +145,8 @@ class _FigmaTabBar extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border(
-          top: BorderSide(
-            color: borderColor,
-            width: 1,
-          ),
-        ),
+        color: tokens.tabBarBackground,
+        border: Border(top: BorderSide(color: tokens.tabBarBorder, width: 1)),
       ),
       child: SafeArea(
         top: false,
@@ -178,8 +162,8 @@ class _FigmaTabBar extends StatelessWidget {
                   assetName: item.asset,
                   isSelected: currentIndex == index,
                   onTap: () => onTap(index),
-                  activeColor: activeColor,
-                  inactiveColor: inactiveColor,
+                  activeColor: tokens.tabBarActive,
+                  inactiveColor: tokens.tabBarInactive,
                 ),
               );
             }),

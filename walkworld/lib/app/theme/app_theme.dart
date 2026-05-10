@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_theme_tokens.dart';
 
-/// 统一输出应用的亮色与暗色主题。
+/// 统一输出应用的亮色与暗色主题。相当于是给了ThemeData里面部分组件比如appBarTheme、cardTheme等一个默认主题，就不用系统默认的了
 class AppTheme {
   const AppTheme._();
 

@@ -56,6 +56,26 @@ class AppColorTokens {
     dark: Color(0xFF2A2E35),
   );
 
+  static const tabBarBackground = DltDynamicColor(
+    light: Color(0xF7FFFFFF),
+    dark: Color(0xF7070B17),
+  );
+
+  static const tabBarBorder = DltDynamicColor(
+    light: Color(0x14000000),
+    dark: Color(0x14FFFFFF),
+  );
+
+  static const tabBarActive = DltDynamicColor(
+    light: Color(0xFF1A6FDB),
+    dark: Color(0xFF00D4FF),
+  );
+
+  static const tabBarInactive = DltDynamicColor(
+    light: Color(0xFF9CA3AF),
+    dark: Color(0xFF3D5070),
+  );
+
   static const danger = DltDynamicColor(
     light: Color(0xFFD84F4F),
     dark: Color(0xFFFF7D7D),
