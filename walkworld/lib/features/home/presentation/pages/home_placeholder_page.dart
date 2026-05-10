@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../app/theme/app_theme_tokens.dart';
+import '../../../../main.dart';
 
 /// 首页默认占位页。
 ///
 /// 当前仅用于搭建底部导航架构，后续会按正式设计稿替换。
-class HomePlaceholderPage extends StatelessWidget {
+class HomePlaceholderPage extends ConsumerWidget {
   const HomePlaceholderPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const _PlaceholderScaffold(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return _PlaceholderScaffold(
       title: '首页',
       subtitle: 'Home Placeholder',
-      backgroundColor: Color(0xFFE9F5FF),
-      accentColor: Color(0xFF2E7D9A),
       description: '这里先作为首页占位页，后续再接入 Figma 正式内容。',
       icon: Icons.explore_outlined,
+      onToggleTheme: () {
+        final brightness = Theme.of(context).brightness;
+
+        // 测试按钮仅在白天与黑夜之间切换，便于直接验证主题资源与配色。
+        ref.read(themeModeProvider.notifier).toggleForTest(brightness);
+      },
     );
   }
 }
@@ -23,26 +31,28 @@ class _PlaceholderScaffold extends StatelessWidget {
   const _PlaceholderScaffold({
     required this.title,
     required this.subtitle,
-    required this.backgroundColor,
-    required this.accentColor,
     required this.description,
     required this.icon,
+    required this.onToggleTheme,
   });
 
   final String title;
   final String subtitle;
-  final Color backgroundColor;
-  final Color accentColor;
   final String description;
   final IconData icon;
+  final VoidCallback onToggleTheme;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final textTheme = Theme.of(context).textTheme;
+    final scaffoldColor = tokens.surfacePrimary;
+    final panelColor = tokens.surfaceSecondary.withValues(alpha: 0.88);
+    final accentColor = tokens.brandPrimary;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(title: Text(title), backgroundColor: backgroundColor),
+      backgroundColor: scaffoldColor,
+      appBar: AppBar(title: Text(title), backgroundColor: scaffoldColor),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -51,9 +61,9 @@ class _PlaceholderScaffold extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: 360),
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.82),
+              color: panelColor,
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: accentColor.withValues(alpha: 0.2)),
+              border: Border.all(color: tokens.borderPrimary),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -84,8 +94,14 @@ class _PlaceholderScaffold extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(
                     height: 1.5,
-                    color: const Color(0xFF35515D),
+                    color: tokens.textSecondary,
                   ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed: onToggleTheme,
+                  icon: const Icon(Icons.brightness_6_outlined),
+                  label: const Text('测试切换主题'),
                 ),
               ],
             ),
