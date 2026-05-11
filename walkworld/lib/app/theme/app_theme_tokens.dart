@@ -23,6 +23,16 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.danger,
     required this.warning,
     required this.success,
+    required this.motionPageBackground,
+    required this.motionPanelBackground,
+    required this.motionPanelBorder,
+    required this.motionMetricCardBackground,
+    required this.motionMetricLabel,
+    required this.motionMetricValue,
+    required this.motionPrimaryActionStart,
+    required this.motionPrimaryActionEnd,
+    required this.motionDisabledActionBackground,
+    required this.motionStopActionBackground,
   });
 
   factory AppThemeTokens.resolve(Brightness brightness) {
@@ -44,6 +54,28 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       danger: AppColorTokens.danger.resolve(brightness),
       warning: AppColorTokens.warning.resolve(brightness),
       success: AppColorTokens.success.resolve(brightness),
+      motionPageBackground: AppColorTokens.motionPageBackground.resolve(
+        brightness,
+      ),
+      motionPanelBackground: AppColorTokens.motionPanelBackground.resolve(
+        brightness,
+      ),
+      motionPanelBorder: AppColorTokens.motionPanelBorder.resolve(brightness),
+      motionMetricCardBackground: AppColorTokens.motionMetricCardBackground
+          .resolve(brightness),
+      motionMetricLabel: AppColorTokens.motionMetricLabel.resolve(brightness),
+      motionMetricValue: AppColorTokens.motionMetricValue.resolve(brightness),
+      motionPrimaryActionStart: AppColorTokens.motionPrimaryActionStart.resolve(
+        brightness,
+      ),
+      motionPrimaryActionEnd: AppColorTokens.motionPrimaryActionEnd.resolve(
+        brightness,
+      ),
+      motionDisabledActionBackground: AppColorTokens
+          .motionDisabledActionBackground
+          .resolve(brightness),
+      motionStopActionBackground: AppColorTokens.motionStopActionBackground
+          .resolve(brightness),
     );
   }
 
@@ -98,6 +130,36 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   /// 成功语义色，通常用于完成状态、成功反馈等场景。
   final Color success;
 
+  /// 运动模块正式页主背景色，通常用于地图页外层底色和明暗基调。
+  final Color motionPageBackground;
+
+  /// 运动模块底部面板背景色，通常用于正式运动页底部浮层容器。
+  final Color motionPanelBackground;
+
+  /// 运动模块底部面板边框色，通常用于面板描边与卡片边界。
+  final Color motionPanelBorder;
+
+  /// 运动模块指标卡片背景色，通常用于距离、时长、速度等数据卡片。
+  final Color motionMetricCardBackground;
+
+  /// 运动模块指标标签文字色，通常用于指标名称和单位等弱化信息。
+  final Color motionMetricLabel;
+
+  /// 运动模块指标主数值颜色，通常用于距离、时长、速度等主信息。
+  final Color motionMetricValue;
+
+  /// 运动模块主操作渐变起始色，通常用于“开始运动”等核心 CTA。
+  final Color motionPrimaryActionStart;
+
+  /// 运动模块主操作渐变结束色，通常用于“开始运动”等核心 CTA。
+  final Color motionPrimaryActionEnd;
+
+  /// 运动模块禁用操作底色，通常用于不可点击的主操作按钮。
+  final Color motionDisabledActionBackground;
+
+  /// 运动模块结束操作底色，通常用于“结束运动”等强提醒操作。
+  final Color motionStopActionBackground;
+
   @override
   AppThemeTokens copyWith({
     Color? brandPrimary,
@@ -117,6 +179,16 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? danger,
     Color? warning,
     Color? success,
+    Color? motionPageBackground,
+    Color? motionPanelBackground,
+    Color? motionPanelBorder,
+    Color? motionMetricCardBackground,
+    Color? motionMetricLabel,
+    Color? motionMetricValue,
+    Color? motionPrimaryActionStart,
+    Color? motionPrimaryActionEnd,
+    Color? motionDisabledActionBackground,
+    Color? motionStopActionBackground,
   }) {
     return AppThemeTokens(
       brandPrimary: brandPrimary ?? this.brandPrimary,
@@ -136,6 +208,22 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       danger: danger ?? this.danger,
       warning: warning ?? this.warning,
       success: success ?? this.success,
+      motionPageBackground: motionPageBackground ?? this.motionPageBackground,
+      motionPanelBackground:
+          motionPanelBackground ?? this.motionPanelBackground,
+      motionPanelBorder: motionPanelBorder ?? this.motionPanelBorder,
+      motionMetricCardBackground:
+          motionMetricCardBackground ?? this.motionMetricCardBackground,
+      motionMetricLabel: motionMetricLabel ?? this.motionMetricLabel,
+      motionMetricValue: motionMetricValue ?? this.motionMetricValue,
+      motionPrimaryActionStart:
+          motionPrimaryActionStart ?? this.motionPrimaryActionStart,
+      motionPrimaryActionEnd:
+          motionPrimaryActionEnd ?? this.motionPrimaryActionEnd,
+      motionDisabledActionBackground:
+          motionDisabledActionBackground ?? this.motionDisabledActionBackground,
+      motionStopActionBackground:
+          motionStopActionBackground ?? this.motionStopActionBackground,
     );
   }
 
@@ -177,6 +265,52 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       danger: Color.lerp(danger, other.danger, t) ?? danger,
       warning: Color.lerp(warning, other.warning, t) ?? warning,
       success: Color.lerp(success, other.success, t) ?? success,
+      motionPageBackground:
+          Color.lerp(motionPageBackground, other.motionPageBackground, t) ??
+          motionPageBackground,
+      motionPanelBackground:
+          Color.lerp(motionPanelBackground, other.motionPanelBackground, t) ??
+          motionPanelBackground,
+      motionPanelBorder:
+          Color.lerp(motionPanelBorder, other.motionPanelBorder, t) ??
+          motionPanelBorder,
+      motionMetricCardBackground:
+          Color.lerp(
+            motionMetricCardBackground,
+            other.motionMetricCardBackground,
+            t,
+          ) ??
+          motionMetricCardBackground,
+      motionMetricLabel:
+          Color.lerp(motionMetricLabel, other.motionMetricLabel, t) ??
+          motionMetricLabel,
+      motionMetricValue:
+          Color.lerp(motionMetricValue, other.motionMetricValue, t) ??
+          motionMetricValue,
+      motionPrimaryActionStart:
+          Color.lerp(
+            motionPrimaryActionStart,
+            other.motionPrimaryActionStart,
+            t,
+          ) ??
+          motionPrimaryActionStart,
+      motionPrimaryActionEnd:
+          Color.lerp(motionPrimaryActionEnd, other.motionPrimaryActionEnd, t) ??
+          motionPrimaryActionEnd,
+      motionDisabledActionBackground:
+          Color.lerp(
+            motionDisabledActionBackground,
+            other.motionDisabledActionBackground,
+            t,
+          ) ??
+          motionDisabledActionBackground,
+      motionStopActionBackground:
+          Color.lerp(
+            motionStopActionBackground,
+            other.motionStopActionBackground,
+            t,
+          ) ??
+          motionStopActionBackground,
     );
   }
 }

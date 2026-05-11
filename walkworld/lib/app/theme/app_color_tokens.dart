@@ -90,4 +90,54 @@ class AppColorTokens {
     light: Color(0xFF34A56F),
     dark: Color(0xFF5DCC95),
   );
+
+  static const motionPageBackground = DltDynamicColor(
+    light: Color(0xFFF5F9FD),
+    dark: Color(0xFF0A1020),
+  );
+
+  static const motionPanelBackground = DltDynamicColor(
+    light: Color(0xF7FFFFFF),
+    dark: Color(0xE3070B17),
+  );
+
+  static const motionPanelBorder = DltDynamicColor(
+    light: Color(0x121A6FDB),
+    dark: Color(0x14FFFFFF),
+  );
+
+  static const motionMetricCardBackground = DltDynamicColor(
+    light: Color(0xFFF8FBFF),
+    dark: Color(0xFF141D30),
+  );
+
+  static const motionMetricLabel = DltDynamicColor(
+    light: Color(0xFF5C7087),
+    dark: Color(0xFF8EA2BF),
+  );
+
+  static const motionMetricValue = DltDynamicColor(
+    light: Color(0xFF142335),
+    dark: Color(0xFFFFFFFF),
+  );
+
+  static const motionPrimaryActionStart = DltDynamicColor(
+    light: Color(0xFF1A6FDB),
+    dark: Color(0xFF0A7AFF),
+  );
+
+  static const motionPrimaryActionEnd = DltDynamicColor(
+    light: Color(0xFF29B8F6),
+    dark: Color(0xFF00D4FF),
+  );
+
+  static const motionDisabledActionBackground = DltDynamicColor(
+    light: Color(0xFFAAC3DA),
+    dark: Color(0xFF40536E),
+  );
+
+  static const motionStopActionBackground = DltDynamicColor(
+    light: Color(0xFFFF6B35),
+    dark: Color(0xFFFF6B35),
+  );
 }

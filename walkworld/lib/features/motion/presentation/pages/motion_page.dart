@@ -38,7 +38,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
     final controller = ref.read(motionControllerProvider.notifier);
     final theme = Theme.of(context);
     final appTokens = theme.extension<AppThemeTokens>()!;
-    final pageTokens = _MotionPageTokens.resolve(theme.brightness);
+    final pageTokens = _MotionPageTokens.fromTheme(appTokens, theme.brightness);
     final latestPoint =
         motionState.realtime?.latestPoint ??
         (motionState.recordedPoints.isNotEmpty
@@ -641,71 +641,52 @@ class _MotionPageTokens {
     required this.softBadgeText,
   });
 
-  factory _MotionPageTokens.resolve(Brightness brightness) {
-    if (brightness == Brightness.dark) {
-      return const _MotionPageTokens(
-        pageBackground: Color(0xFF0A1020),
-        mapTopMask: Color(0x240A1020),
-        mapBottomMask: Color(0xCC070B17),
-        overlayBackground: Color(0x8A0D1528),
-        overlayBorder: Color(0x1FFFFFFF),
-        overlayShadow: Color(0x52000000),
-        overlayPrimaryText: Color(0xFFF4FAFF),
-        overlaySecondaryText: Color(0xFFB3C3D8),
-        overlayActionBackground: Color(0x2200D4FF),
-        panelBackground: Color(0xE3070B17),
-        panelBorder: Color(0x14FFFFFF),
-        panelShadow: Color(0x8A000000),
-        panelActionBorder: Color(0x1FFFFFFF),
-        metricCardBackground: Color(0xFF141D30),
-        metricCardBorder: Color(0x14FFFFFF),
-        metricLabelText: Color(0xFF8EA2BF),
-        metricValueText: Color(0xFFFFFFFF),
-        metricUnitText: Color(0xFF8EA2BF),
-        primaryActionStart: Color(0xFF0A7AFF),
-        primaryActionEnd: Color(0xFF00D4FF),
-        primaryActionGlow: Color(0x7300B4FF),
-        primaryActionText: Color(0xFFFFFFFF),
-        primaryActionIconBackground: Color(0x33FFFFFF),
-        primaryActionIconForeground: Color(0xFFFFFFFF),
-        disabledActionBackground: Color(0xFF40536E),
-        stopActionBackground: Color(0xFFFF6B35),
-        softBadgeBackground: Color(0x1A00D4FF),
-        softBadgeBorder: Color(0x2600D4FF),
-        softBadgeText: Color(0xFF00D4FF),
-      );
-    }
+  factory _MotionPageTokens.fromTheme(
+    AppThemeTokens tokens,
+    Brightness brightness,
+  ) {
+    final isDark = brightness == Brightness.dark;
 
-    return const _MotionPageTokens(
-      pageBackground: Color(0xFFF5F9FD),
-      mapTopMask: Color(0x12FFFFFF),
-      mapBottomMask: Color(0xCCF5F9FD),
-      overlayBackground: Color(0xE8FFFFFF),
-      overlayBorder: Color(0x141A6FDB),
-      overlayShadow: Color(0x1A1A6FDB),
-      overlayPrimaryText: Color(0xFF162334),
-      overlaySecondaryText: Color(0xFF51667D),
-      overlayActionBackground: Color(0x121A6FDB),
-      panelBackground: Color(0xF7FFFFFF),
-      panelBorder: Color(0x121A6FDB),
-      panelShadow: Color(0x141A6FDB),
-      panelActionBorder: Color(0x1A254E7A),
-      metricCardBackground: Color(0xFFF8FBFF),
-      metricCardBorder: Color(0x141A6FDB),
-      metricLabelText: Color(0xFF5C7087),
-      metricValueText: Color(0xFF142335),
-      metricUnitText: Color(0xFF5C7087),
-      primaryActionStart: Color(0xFF1A6FDB),
-      primaryActionEnd: Color(0xFF29B8F6),
-      primaryActionGlow: Color(0x331A6FDB),
-      primaryActionText: Color(0xFFFFFFFF),
-      primaryActionIconBackground: Color(0x26FFFFFF),
-      primaryActionIconForeground: Color(0xFFFFFFFF),
-      disabledActionBackground: Color(0xFFAAC3DA),
-      stopActionBackground: Color(0xFFFF6B35),
-      softBadgeBackground: Color(0x121A6FDB),
-      softBadgeBorder: Color(0x141A6FDB),
-      softBadgeText: Color(0xFF1A6FDB),
+    return _MotionPageTokens(
+      pageBackground: tokens.motionPageBackground,
+      mapTopMask: tokens.motionPageBackground.withValues(
+        alpha: isDark ? 0.14 : 0.07,
+      ),
+      mapBottomMask: tokens.motionPageBackground.withValues(
+        alpha: isDark ? 0.80 : 0.80,
+      ),
+      overlayBackground: tokens.surfaceOverlay,
+      overlayBorder: tokens.motionPanelBorder,
+      overlayShadow: Colors.black.withValues(alpha: isDark ? 0.32 : 0.10),
+      overlayPrimaryText: tokens.textPrimary,
+      overlaySecondaryText: tokens.textSecondary,
+      overlayActionBackground: tokens.tabBarActive.withValues(alpha: 0.12),
+      panelBackground: tokens.motionPanelBackground,
+      panelBorder: tokens.motionPanelBorder,
+      panelShadow: Colors.black.withValues(alpha: isDark ? 0.54 : 0.08),
+      panelActionBorder: isDark
+          ? tokens.textInverse.withValues(alpha: 0.12)
+          : tokens.brandPrimary.withValues(alpha: 0.10),
+      metricCardBackground: tokens.motionMetricCardBackground,
+      metricCardBorder: tokens.motionPanelBorder,
+      metricLabelText: tokens.motionMetricLabel,
+      metricValueText: tokens.motionMetricValue,
+      metricUnitText: tokens.motionMetricLabel,
+      primaryActionStart: tokens.motionPrimaryActionStart,
+      primaryActionEnd: tokens.motionPrimaryActionEnd,
+      primaryActionGlow: tokens.motionPrimaryActionEnd.withValues(
+        alpha: isDark ? 0.45 : 0.20,
+      ),
+      primaryActionText: tokens.textInverse,
+      primaryActionIconBackground: tokens.textInverse.withValues(
+        alpha: isDark ? 0.20 : 0.15,
+      ),
+      primaryActionIconForeground: tokens.textInverse,
+      disabledActionBackground: tokens.motionDisabledActionBackground,
+      stopActionBackground: tokens.motionStopActionBackground,
+      softBadgeBackground: tokens.tabBarActive.withValues(alpha: 0.10),
+      softBadgeBorder: tokens.tabBarActive.withValues(alpha: 0.14),
+      softBadgeText: tokens.tabBarActive,
     );
   }
 
