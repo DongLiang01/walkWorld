@@ -8,10 +8,11 @@ import '../../../features/profile/presentation/pages/profile_placeholder_page.da
 
 /// 应用根壳页面。
 ///
-/// 当前先完成 Step 10 的最小架构准备：
+/// 当前正式页与调试页职责已经拆开：
 /// 1. 提供接近设计稿语义的底部三栏导航
-/// 2. 将现有运动调试页挂到“运动”模块
-/// 3. 为首页与“我的”提供默认占位页，后续再逐步替换为正式 UI
+/// 2. “运动”模块挂正式 `MotionPage`
+/// 3. `MotionDebugPage` 单独保留给联调与验收，不再作为正式入口
+/// 4. 为首页与“我的”提供默认占位页，后续再逐步替换为正式 UI
 class AppShellPage extends StatefulWidget {
   const AppShellPage({super.key});
 

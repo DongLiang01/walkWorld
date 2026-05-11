@@ -12,6 +12,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   private var trackPolyline: MAPolyline?
   private var trackAnnotation: MAPointAnnotation?
   private var hasAdjustedCamera = false
+  private var hasCenteredOnUserLocation = false
 
   init(
     frame: CGRect,
@@ -50,6 +51,10 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     if let arguments = arguments as? [String: Any],
        let showUserLocation = arguments["showUserLocation"] as? Bool {
       mapView.showsUserLocation = showUserLocation
+
+      if showUserLocation {
+        mapView.userTrackingMode = .follow
+      }
     }
   }
 
@@ -145,6 +150,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     if !hasAdjustedCamera {
       mapView.setCenter(coordinate, animated: false)
       hasAdjustedCamera = true
+      hasCenteredOnUserLocation = true
     }
   }
 
@@ -167,11 +173,13 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     if coordinates.count == 1, let firstCoordinate = coordinates.first {
       mapView.setCenter(firstCoordinate, animated: false)
       hasAdjustedCamera = true
+      hasCenteredOnUserLocation = true
       return
     }
 
     mapView.showOverlays([polyline], edgePadding: UIEdgeInsets(top: 80, left: 40, bottom: 80, right: 40), animated: false)
     hasAdjustedCamera = true
+    hasCenteredOnUserLocation = true
   }
 
   /// 清空当前位置标记和轨迹折线。
@@ -187,6 +195,23 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     }
 
     hasAdjustedCamera = false
+    hasCenteredOnUserLocation = false
+  }
+
+  /// 首次拿到系统用户定位后，立即把地图中心切到当前位置。
+  ///
+  /// 这样即便 Flutter 侧实时事件还没推上来，页面初次进入时也不会停留在高德默认中心点。
+  func mapView(_ mapView: MAMapView!, didUpdate userLocation: MAUserLocation!, updatingLocation: Bool) {
+    guard updatingLocation,
+          let userLocation,
+          CLLocationCoordinate2DIsValid(userLocation.coordinate),
+          !hasCenteredOnUserLocation else {
+      return
+    }
+
+    mapView.setCenter(userLocation.coordinate, animated: false)
+    hasCenteredOnUserLocation = true
+    hasAdjustedCamera = true
   }
 
   /// 为轨迹折线提供渲染样式。
