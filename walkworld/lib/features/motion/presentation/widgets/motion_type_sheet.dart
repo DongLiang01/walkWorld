@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-
+import '../../../../app/svg/app_svg_icon.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
 
 /// 运动类型枚举，对应设计稿三种类型选项。
@@ -366,10 +365,9 @@ class _MotionTypeOption extends StatelessWidget {
                     : const [],
               ),
               child: Center(
-                child: SvgPicture.asset(
+                child: AppSvgIcon(
                   type.iconAssetPath,
-                  width: 20,
-                  height: 20,
+                  size: 20,
                 ),
               ),
             ),
