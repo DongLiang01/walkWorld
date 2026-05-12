@@ -8,6 +8,7 @@ import '../../application/application.dart';
 import '../../models/models.dart';
 import '../../models/motion_status.dart';
 import '../widgets/motion_map_view.dart';
+import '../widgets/motion_type_sheet.dart';
 
 /// 运动模块正式页面入口。
 ///
@@ -103,7 +104,13 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                       motionState: motionState,
                       pageTokens: pageTokens,
                       canStart: canStart,
-                      onStart: canStart ? controller.startWorkout : null,
+                      // 点击开始运动先弹出类型选择弹窗，确认后再触发开始
+                      onStart: canStart
+                          ? () => _showTypeSheetAndStart(
+                                context,
+                                controller.startWorkout,
+                              )
+                          : null,
                     )
                   : _RunningActionPanel(
                       key: const ValueKey('running'),
@@ -719,6 +726,20 @@ class _MotionPageTokens {
   final Color softBadgeBackground;
   final Color softBadgeBorder;
   final Color softBadgeText;
+}
+
+/// 弹出运动类型选择底部弹窗，用户确认后再触发 [onConfirm] 开始运动。
+///
+/// 若用户取消弹窗，则不做任何操作。
+Future<void> _showTypeSheetAndStart(
+  BuildContext context,
+  Future<void> Function() onConfirm,
+) async {
+  final selectedType = await showMotionTypeSheet(context);
+  // 用户取消时 selectedType 为 null，直接返回
+  if (selectedType == null) return;
+  // 当前 startWorkout 暂不接受类型参数，后续可扩展
+  await onConfirm();
 }
 
 String _formatDuration(int seconds) {

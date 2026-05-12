@@ -33,6 +33,20 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.motionPrimaryActionEnd,
     required this.motionDisabledActionBackground,
     required this.motionStopActionBackground,
+    required this.motionModalScrim,
+    required this.motionModalBackground,
+    required this.motionModalHandle,
+    required this.motionModalDescription,
+    required this.motionModalOptionBackground,
+    required this.motionModalOptionBorder,
+    required this.motionModalOptionSelectedBackground,
+    required this.motionModalOptionSelectedBorder,
+    required this.motionModalMutedActionBackground,
+    required this.motionModalMutedActionBorder,
+    required this.motionModalMutedActionText,
+    required this.motionModalOptionActiveAccent,
+    required this.motionTypeHikingBg,
+    required this.motionTypeCyclingBg,
   });
 
   factory AppThemeTokens.resolve(Brightness brightness) {
@@ -76,6 +90,36 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
           .resolve(brightness),
       motionStopActionBackground: AppColorTokens.motionStopActionBackground
           .resolve(brightness),
+      motionModalScrim: AppColorTokens.motionModalScrim.resolve(brightness),
+      motionModalBackground: AppColorTokens.motionModalBackground.resolve(
+        brightness,
+      ),
+      motionModalHandle: AppColorTokens.motionModalHandle.resolve(brightness),
+      motionModalDescription: AppColorTokens.motionModalDescription.resolve(
+        brightness,
+      ),
+      motionModalOptionBackground:
+          AppColorTokens.motionModalOptionBackground.resolve(brightness),
+      motionModalOptionBorder: AppColorTokens.motionModalOptionBorder.resolve(
+        brightness,
+      ),
+      motionModalOptionSelectedBackground: AppColorTokens
+          .motionModalOptionSelectedBackground
+          .resolve(brightness),
+      motionModalOptionSelectedBorder: AppColorTokens
+          .motionModalOptionSelectedBorder
+          .resolve(brightness),
+      motionModalMutedActionBackground: AppColorTokens
+          .motionModalMutedActionBackground
+          .resolve(brightness),
+      motionModalMutedActionBorder: AppColorTokens.motionModalMutedActionBorder
+          .resolve(brightness),
+      motionModalMutedActionText: AppColorTokens.motionModalMutedActionText
+          .resolve(brightness),
+      motionModalOptionActiveAccent: AppColorTokens.motionModalOptionActiveAccent
+          .resolve(brightness),
+      motionTypeHikingBg: AppColorTokens.motionTypeHikingBg.resolve(brightness),
+      motionTypeCyclingBg: AppColorTokens.motionTypeCyclingBg.resolve(brightness),
     );
   }
 
@@ -160,6 +204,47 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   /// 运动模块结束操作底色，通常用于“结束运动”等强提醒操作。
   final Color motionStopActionBackground;
 
+  /// 运动模块弹窗遮罩色，通常用于类型选择弹窗打开后的地图遮罩。
+  final Color motionModalScrim;
+
+  /// 运动模块弹窗背景色，通常用于底部弹窗主体容器。
+  final Color motionModalBackground;
+
+  /// 运动模块弹窗拖拽条颜色，通常用于弹窗顶部手柄。
+  final Color motionModalHandle;
+
+  /// 运动模块弹窗说明文字色，通常用于副标题和弱说明。
+  final Color motionModalDescription;
+
+  /// 运动模块弹窗选项默认背景色，通常用于未选中的运动类型卡片。
+  final Color motionModalOptionBackground;
+
+  /// 运动模块弹窗选项默认边框色，通常用于未选中的运动类型卡片描边。
+  final Color motionModalOptionBorder;
+
+  /// 运动模块弹窗选项选中背景色，通常用于当前选中的运动类型卡片。
+  final Color motionModalOptionSelectedBackground;
+
+  /// 运动模块弹窗选项选中边框色，通常用于当前选中的运动类型卡片描边。
+  final Color motionModalOptionSelectedBorder;
+
+  /// 运动模块弹窗弱化操作底色，通常用于“取消”类次级按钮。
+  final Color motionModalMutedActionBackground;
+
+  /// 运动模块弹窗弱化操作边框色，通常用于“取消”类次级按钮描边。
+  final Color motionModalMutedActionBorder;
+
+  /// 运动模块弹窗弱化操作文字色，通常用于“取消”类次级按钮文字。
+  final Color motionModalMutedActionText;
+  /// 运动模块弹窗选项中，代表选中状态的品牌高亮色（如跑步选中时的背景和文字）。
+  final Color motionModalOptionActiveAccent;
+
+  /// 运动模块弹窗选项中，徒步的图标默认背景色。
+  final Color motionTypeHikingBg;
+
+  /// 运动模块弹窗选项中，骑行的图标默认背景色。
+  final Color motionTypeCyclingBg;
+
   @override
   AppThemeTokens copyWith({
     Color? brandPrimary,
@@ -189,6 +274,20 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? motionPrimaryActionEnd,
     Color? motionDisabledActionBackground,
     Color? motionStopActionBackground,
+    Color? motionModalScrim,
+    Color? motionModalBackground,
+    Color? motionModalHandle,
+    Color? motionModalDescription,
+    Color? motionModalOptionBackground,
+    Color? motionModalOptionBorder,
+    Color? motionModalOptionSelectedBackground,
+    Color? motionModalOptionSelectedBorder,
+    Color? motionModalMutedActionBackground,
+    Color? motionModalMutedActionBorder,
+    Color? motionModalMutedActionText,
+    Color? motionModalOptionActiveAccent,
+    Color? motionTypeHikingBg,
+    Color? motionTypeCyclingBg,
   }) {
     return AppThemeTokens(
       brandPrimary: brandPrimary ?? this.brandPrimary,
@@ -224,6 +323,32 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
           motionDisabledActionBackground ?? this.motionDisabledActionBackground,
       motionStopActionBackground:
           motionStopActionBackground ?? this.motionStopActionBackground,
+      motionModalScrim: motionModalScrim ?? this.motionModalScrim,
+      motionModalBackground:
+          motionModalBackground ?? this.motionModalBackground,
+      motionModalHandle: motionModalHandle ?? this.motionModalHandle,
+      motionModalDescription:
+          motionModalDescription ?? this.motionModalDescription,
+      motionModalOptionBackground:
+          motionModalOptionBackground ?? this.motionModalOptionBackground,
+      motionModalOptionBorder:
+          motionModalOptionBorder ?? this.motionModalOptionBorder,
+      motionModalOptionSelectedBackground:
+          motionModalOptionSelectedBackground ??
+          this.motionModalOptionSelectedBackground,
+      motionModalOptionSelectedBorder:
+          motionModalOptionSelectedBorder ?? this.motionModalOptionSelectedBorder,
+      motionModalMutedActionBackground:
+          motionModalMutedActionBackground ??
+          this.motionModalMutedActionBackground,
+      motionModalMutedActionBorder:
+          motionModalMutedActionBorder ?? this.motionModalMutedActionBorder,
+      motionModalMutedActionText:
+          motionModalMutedActionText ?? this.motionModalMutedActionText,
+      motionModalOptionActiveAccent:
+          motionModalOptionActiveAccent ?? this.motionModalOptionActiveAccent,
+      motionTypeHikingBg: motionTypeHikingBg ?? this.motionTypeHikingBg,
+      motionTypeCyclingBg: motionTypeCyclingBg ?? this.motionTypeCyclingBg,
     );
   }
 
@@ -311,6 +436,80 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
             t,
           ) ??
           motionStopActionBackground,
+      motionModalScrim:
+          Color.lerp(motionModalScrim, other.motionModalScrim, t) ??
+          motionModalScrim,
+      motionModalBackground:
+          Color.lerp(motionModalBackground, other.motionModalBackground, t) ??
+          motionModalBackground,
+      motionModalHandle:
+          Color.lerp(motionModalHandle, other.motionModalHandle, t) ??
+          motionModalHandle,
+      motionModalDescription:
+          Color.lerp(motionModalDescription, other.motionModalDescription, t) ??
+          motionModalDescription,
+      motionModalOptionBackground:
+          Color.lerp(
+            motionModalOptionBackground,
+            other.motionModalOptionBackground,
+            t,
+          ) ??
+          motionModalOptionBackground,
+      motionModalOptionBorder:
+          Color.lerp(
+            motionModalOptionBorder,
+            other.motionModalOptionBorder,
+            t,
+          ) ??
+          motionModalOptionBorder,
+      motionModalOptionSelectedBackground:
+          Color.lerp(
+            motionModalOptionSelectedBackground,
+            other.motionModalOptionSelectedBackground,
+            t,
+          ) ??
+          motionModalOptionSelectedBackground,
+      motionModalOptionSelectedBorder:
+          Color.lerp(
+            motionModalOptionSelectedBorder,
+            other.motionModalOptionSelectedBorder,
+            t,
+          ) ??
+          motionModalOptionSelectedBorder,
+      motionModalMutedActionBackground:
+          Color.lerp(
+            motionModalMutedActionBackground,
+            other.motionModalMutedActionBackground,
+            t,
+          ) ??
+          motionModalMutedActionBackground,
+      motionModalMutedActionBorder:
+          Color.lerp(
+            motionModalMutedActionBorder,
+            other.motionModalMutedActionBorder,
+            t,
+          ) ??
+          motionModalMutedActionBorder,
+      motionModalMutedActionText:
+          Color.lerp(
+            motionModalMutedActionText,
+            other.motionModalMutedActionText,
+            t,
+          ) ??
+          motionModalMutedActionText,
+      motionModalOptionActiveAccent:
+          Color.lerp(
+            motionModalOptionActiveAccent,
+            other.motionModalOptionActiveAccent,
+            t,
+          ) ??
+          motionModalOptionActiveAccent,
+      motionTypeHikingBg:
+          Color.lerp(motionTypeHikingBg, other.motionTypeHikingBg, t) ??
+          motionTypeHikingBg,
+      motionTypeCyclingBg:
+          Color.lerp(motionTypeCyclingBg, other.motionTypeCyclingBg, t) ??
+          motionTypeCyclingBg,
     );
   }
 }

@@ -140,4 +140,74 @@ class AppColorTokens {
     light: Color(0xFFFF6B35),
     dark: Color(0xFFFF6B35),
   );
+
+  static const motionModalScrim = DltDynamicColor(
+    light: Color(0x85000000),
+    dark: Color(0xAD000000),
+  );
+
+  static const motionModalBackground = DltDynamicColor(
+    light: Color(0xFFFFFFFF),
+    dark: Color(0xFF0C1828),
+  );
+
+  static const motionModalHandle = DltDynamicColor(
+    light: Color(0x1A000000),
+    dark: Color(0x24FFFFFF),
+  );
+
+  static const motionModalDescription = DltDynamicColor(
+    light: Color(0xFF64748B),
+    dark: Color(0xFF6A84A4),
+  );
+
+  static const motionModalOptionBackground = DltDynamicColor(
+    light: Color(0xFFF3F6FB),
+    dark: Color(0x0DFFFFFF),
+  );
+
+  static const motionModalOptionBorder = DltDynamicColor(
+    light: Color(0x0D000000),
+    dark: Color(0x12FFFFFF),
+  );
+
+  static const motionModalOptionSelectedBackground = DltDynamicColor(
+    light: Color(0x121A6FDB),
+    dark: Color(0x1700D4FF),
+  );
+
+  static const motionModalOptionSelectedBorder = DltDynamicColor(
+    light: Color(0xFF1A6FDB),
+    dark: Color(0xFF00D4FF),
+  );
+
+  static const motionModalMutedActionBackground = DltDynamicColor(
+    light: Color(0xFFF3F6FB),
+    dark: Color(0x12FFFFFF),
+  );
+
+  static const motionModalMutedActionBorder = DltDynamicColor(
+    light: Color(0x14000000),
+    dark: Color(0x1AFFFFFF),
+  );
+
+  static const motionModalMutedActionText = DltDynamicColor(
+    light: Color(0xFF374151),
+    dark: Color(0xA6FFFFFF),
+  );
+
+  static const motionModalOptionActiveAccent = DltDynamicColor(
+    light: Color(0xFF1A6FDB),
+    dark: Color(0xFF00D4FF),
+  );
+
+  static const motionTypeHikingBg = DltDynamicColor(
+    light: Color(0x2128A745),
+    dark: Color(0x2128A745),
+  );
+
+  static const motionTypeCyclingBg = DltDynamicColor(
+    light: Color(0x21FF6B35),
+    dark: Color(0x21FF6B35),
+  );
 }
