@@ -9,3 +9,4 @@
 7. 命中上一条场景但未先读取并遵循 `theme-color-tokens` skill 时，不得继续实现。
 8. 除非用户明确要求做临时原型，否则页面层禁止直接新增亮暗两套 `Color(...)`；必须优先收口到主题体系。
 9. 凡涉及主题色相关改动，开始实现前必须先执行范围检查：`rg -n "Brightness\\.dark|Color\\(" walkworld/lib`，确认影响范围后，再按 `theme-color-tokens` skill 修改。
+10. 在所有涉及 SVG 图片加载的开发中，必须统一使用项目中封装好的 `AppSvgIcon` 组件（例如通过 `import 'package:walkworld/app/svg/app_svg_icon.dart';`），禁止直接使用 `SvgPicture.asset`。
