@@ -1,0 +1,23 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 46.8 46.8" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="CompletionBadgeIcon" clip-path="url(#clip0_73_7889)">
+<path id="Vector" d="M23.4 46.15C35.9645 46.15 46.15 35.9645 46.15 23.4C46.15 10.8356 35.9645 0.65003 23.4 0.65003C10.8355 0.65003 0.649986 10.8356 0.649986 23.4C0.649986 35.9645 10.8355 46.15 23.4 46.15Z" fill="#22C55E" fill-opacity="0.12"/>
+<path id="Vector_2" d="M23.4 42.25C33.8106 42.25 42.25 33.8106 42.25 23.4C42.25 12.9895 33.8106 4.55003 23.4 4.55003C12.9894 4.55003 4.54999 12.9895 4.54999 23.4C4.54999 33.8106 12.9894 42.25 23.4 42.25Z" fill="#22C55E" fill-opacity="0.18"/>
+<path id="Vector_3" d="M23.4 39C32.0156 39 39 32.0157 39 23.4C39 14.7844 32.0156 7.80003 23.4 7.80003C14.7843 7.80003 7.79999 14.7844 7.79999 23.4C7.79999 32.0157 14.7843 39 23.4 39Z" fill="url(#paint0_radial_73_7889)"/>
+<path id="Vector_4" d="M15.6 23.4L20.8 28.6L31.2 17.55" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_5" opacity="0.9" d="M37.05 7.80003L38.025 10.725L40.95 11.7L38.025 12.675L37.05 15.6L36.075 12.675L33.15 11.7L36.075 10.725L37.05 7.80003Z" fill="#FCD34D"/>
+<path id="Vector_6" opacity="0.85" d="M7.14999 5.20003L7.79999 7.15003L9.74999 7.80003L7.79999 8.45003L7.14999 10.4L6.49999 8.45003L4.54999 7.80003L6.49999 7.15003L7.14999 5.20003Z" fill="#86EFAC"/>
+<path id="Vector_7" opacity="0.75" d="M39 33.8L39.65 35.75L41.6 36.4L39.65 37.05L39 39L38.35 37.05L36.4 36.4L38.35 35.75L39 33.8Z" fill="#FCA5A5"/>
+<path id="Vector_8" opacity="0.8" d="M5.84999 32.5L6.49999 34.125L8.12499 34.775L6.49999 35.425L5.84999 37.05L5.19999 35.425L3.57499 34.775L5.19999 34.125L5.84999 32.5Z" fill="#93C5FD"/>
+<path id="Vector_9" opacity="0.6" d="M37.7 23.725C38.5974 23.725 39.325 22.9975 39.325 22.1C39.325 21.2026 38.5974 20.475 37.7 20.475C36.8025 20.475 36.075 21.2026 36.075 22.1C36.075 22.9975 36.8025 23.725 37.7 23.725Z" fill="#4ADE80"/>
+<path id="Vector_10" opacity="0.55" d="M9.09999 22.1C9.81796 22.1 10.4 21.518 10.4 20.8C10.4 20.0821 9.81796 19.5 9.09999 19.5C8.38202 19.5 7.79999 20.0821 7.79999 20.8C7.79999 21.518 8.38202 22.1 9.09999 22.1Z" fill="#FCD34D"/>
+</g>
+<defs>
+<radialGradient id="paint0_radial_73_7889" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(23.4 17.16) scale(21.84)">
+<stop stop-color="#4ADE80"/>
+<stop offset="1" stop-color="#16A34A"/>
+</radialGradient>
+<clipPath id="clip0_73_7889">
+<rect width="46.8" height="46.8" fill="white"/>
+</clipPath>
+</defs>
+</svg>
