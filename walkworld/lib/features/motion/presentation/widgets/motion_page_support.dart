@@ -151,8 +151,12 @@ String formatMotionPace(double? metersPerSecond) {
   }
   // 配速：分钟/公里 = 1000 / (米/秒 * 60)
   final double minutesPerKm = 1000 / (metersPerSecond * 60);
-  final int minutes = minutesPerKm.floor();
-  final int seconds = ((minutesPerKm - minutes) * 60).round();
+  int minutes = minutesPerKm.floor();
+  int seconds = ((minutesPerKm - minutes) * 60).round();
+  if (seconds == 60) {
+    minutes += 1;
+    seconds = 0;
+  }
   return '$minutes\'${seconds.toString().padLeft(2, '0')}';
 }
 
