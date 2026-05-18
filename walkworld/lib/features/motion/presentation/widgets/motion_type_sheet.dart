@@ -77,6 +77,8 @@ class _MotionTypeSheetState extends State<_MotionTypeSheet> {
     final theme = Theme.of(context);
     final appTokens = theme.extension<AppThemeTokens>()!;
     final isDark = theme.brightness == Brightness.dark;
+    final actionDayIconPath =
+      'assets/icons/motion/motion_start_action_day.svg';
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -107,37 +109,6 @@ class _MotionTypeSheetState extends State<_MotionTypeSheet> {
                     color: appTokens.motionModalHandle,
                     borderRadius: BorderRadius.circular(2),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ── 标题区 ──
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '选择运动类型',
-                      style: TextStyle(
-                        color: appTokens.textPrimary,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '开始前先选择本次运动方式',
-                      style: TextStyle(
-                        color: appTokens.motionModalDescription,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w400,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
                 ),
               ),
               const SizedBox(height: 16),
@@ -244,23 +215,9 @@ class _MotionTypeSheetState extends State<_MotionTypeSheet> {
                                 children: [
                                   // 小播放图标
                                   Container(
-                                    width: 18,
-                                    height: 18,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.white
-                                          .withValues(alpha: 0.20),
-                                    ),
-                                    child: Center(
-                                      child: CustomPaint(
-                                        size: const Size(6, 7),
-                                        painter: _PlayTrianglePainter(
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
+                                    padding: EdgeInsets.only(right: 8),
+                                    child: AppSvgIcon(actionDayIconPath),
                                   ),
-                                  const SizedBox(width: 8),
                                   const Text(
                                     '确认开始',
                                     style: TextStyle(
@@ -432,26 +389,4 @@ class _MotionTypeOption extends StatelessWidget {
       ),
     );
   }
-}
-
-/// 播放三角形图标画笔（复用 motion_page.dart 的同款）
-class _PlayTrianglePainter extends CustomPainter {
-  const _PlayTrianglePainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, size.height / 2)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _PlayTrianglePainter oldDelegate) =>
-      oldDelegate.color != color;
 }

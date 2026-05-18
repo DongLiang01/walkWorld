@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/svg/app_svg_icon.dart';
 import '../../application/motion_state.dart';
 import '../../models/motion_status.dart';
 import 'motion_page_support.dart';
@@ -48,6 +49,11 @@ class PreStartActionArea extends StatelessWidget {
 }
 
 class _PrimaryMotionButton extends StatelessWidget {
+  static const String _startActionDayIconPath =
+      'assets/icons/motion/motion_start_action_day.svg';
+  static const String _startActionNightIconPath =
+      'assets/icons/motion/motion_start_action_night.svg';
+
   const _PrimaryMotionButton({
     required this.label,
     required this.pageTokens,
@@ -64,6 +70,7 @@ class _PrimaryMotionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final gradientColors = enabled
         ? [pageTokens.primaryActionStart, pageTokens.primaryActionEnd]
         : [
@@ -100,33 +107,33 @@ class _PrimaryMotionButton extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 17,
-                    height: 17,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: pageTokens.primaryActionIconBackground,
-                    ),
-                    child: Center(
-                      child: isLoading
-                          ? SizedBox(
+                  isLoading
+                      ? Container(
+                          width: 17,
+                          height: 17,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: pageTokens.primaryActionIconBackground,
+                          ),
+                          child: Center(
+                            child: SizedBox(
                               width: 9,
                               height: 9,
+                              //CircularProgressIndicator是系统的进度条
                               child: CircularProgressIndicator(
                                 strokeWidth: 1.6,
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   pageTokens.primaryActionIconForeground,
                                 ),
                               ),
-                            )
-                          : CustomPaint(
-                              size: const Size(6, 7),
-                              painter: PlayTrianglePainter(
-                                color: pageTokens.primaryActionIconForeground,
-                              ),
                             ),
-                    ),
-                  ),
+                          ),
+                        )
+                      : AppSvgIcon(
+                          isDark
+                              ? _startActionNightIconPath
+                              : _startActionDayIconPath,
+                        ),
                   const SizedBox(width: 8),
                   Text(
                     label,

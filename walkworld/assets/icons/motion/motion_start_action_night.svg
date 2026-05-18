@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 16.9 16.9" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="PlayCircleIcon" clip-path="url(#clip0_0_4)">
+<path id="Vector" d="M8.44995 16.1318C12.6925 16.1318 16.1318 12.6925 16.1318 8.44996C16.1318 4.20741 12.6925 0.76814 8.44995 0.76814C4.2074 0.76814 0.768137 4.20741 0.768137 8.44996C0.768137 12.6925 4.2074 16.1318 8.44995 16.1318Z" fill="white" fill-opacity="0.22"/>
+<path id="Vector_2" d="M8.44995 16.1318C12.6925 16.1318 16.1318 12.6925 16.1318 8.44996C16.1318 4.20741 12.6925 0.76814 8.44995 0.76814C4.2074 0.76814 0.768137 4.20741 0.768137 8.44996C0.768137 12.6925 4.2074 16.1318 8.44995 16.1318Z" stroke="white" stroke-opacity="0.3" stroke-width="0.614545"/>
+<path id="Vector_3" d="M6.91362 5.76136L12.675 8.45L6.91362 11.1386V5.76136Z" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_0_4">
+<rect width="16.9" height="16.9" fill="white"/>
+</clipPath>
+</defs>
+</svg>
