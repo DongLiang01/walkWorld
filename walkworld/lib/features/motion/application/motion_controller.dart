@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -32,8 +33,8 @@ class MotionController extends Notifier<MotionState> {
   /// 2. 保证原生事件监听已经建立
   Future<void> initialize() async {
     try {
-      final locationServiceStatus =
-          await _motionService.getLocationServiceStatus();
+      final locationServiceStatus = await _motionService
+          .getLocationServiceStatus();
 
       state = state.copyWith(
         locationServiceEnabled: locationServiceStatus.enabled,
@@ -53,10 +54,7 @@ class MotionController extends Notifier<MotionState> {
     try {
       final result = await _motionService.requestLocationPermission();
 
-      state = state.copyWith(
-        permissionStatus: result.status,
-        error: null,
-      );
+      state = state.copyWith(permissionStatus: result.status, error: null);
     } catch (error) {
       _setError(
         code: 'permission_request_failed',
@@ -96,10 +94,7 @@ class MotionController extends Notifier<MotionState> {
       final result = await _motionService.startWorkout(sessionId: sessionId);
 
       if (!result.accepted) {
-        _setError(
-          code: 'start_workout_rejected',
-          message: '原生未接受开始运动命令。',
-        );
+        _setError(code: 'start_workout_rejected', message: '原生未接受开始运动命令。');
         return;
       }
 
@@ -107,14 +102,15 @@ class MotionController extends Notifier<MotionState> {
         status: result.status,
         currentSessionId: sessionId,
         sessionStartTime: result.startTime,
-        realtime: (state.realtime ?? const MotionRealtime(
-          status: MotionStatus.running,
-          durationSeconds: 0,
-          distanceMeters: 0,
-          pointCount: 0,
-        )).copyWith(
-          status: result.status,
-        ),
+        realtime:
+            (state.realtime ??
+                    const MotionRealtime(
+                      status: MotionStatus.running,
+                      durationSeconds: 0,
+                      distanceMeters: 0,
+                      pointCount: 0,
+                    ))
+                .copyWith(status: result.status),
       );
     } catch (error) {
       _setError(
@@ -135,10 +131,7 @@ class MotionController extends Notifier<MotionState> {
       final result = await _motionService.pauseWorkout();
 
       if (!result.accepted) {
-        _setError(
-          code: 'pause_workout_rejected',
-          message: '原生未接受暂停运动命令。',
-        );
+        _setError(code: 'pause_workout_rejected', message: '原生未接受暂停运动命令。');
         return;
       }
 
@@ -166,10 +159,7 @@ class MotionController extends Notifier<MotionState> {
       final result = await _motionService.resumeWorkout();
 
       if (!result.accepted) {
-        _setError(
-          code: 'resume_workout_rejected',
-          message: '原生未接受继续运动命令。',
-        );
+        _setError(code: 'resume_workout_rejected', message: '原生未接受继续运动命令。');
         return;
       }
 
@@ -198,10 +188,7 @@ class MotionController extends Notifier<MotionState> {
       final result = await _motionService.stopWorkout();
 
       if (!result.accepted) {
-        _setError(
-          code: 'stop_workout_rejected',
-          message: '原生未接受结束运动命令。',
-        );
+        _setError(code: 'stop_workout_rejected', message: '原生未接受结束运动命令。');
         return;
       }
 
@@ -259,16 +246,15 @@ class MotionController extends Notifier<MotionState> {
   void _handleNativeEvent(MotionChannelEvent event) {
     switch (event.type) {
       case MotionChannelEventType.permissionChanged:
-        final permissionStatus =
-            MotionPermissionStatus.fromValue(event.payload['status'] as String?);
-        state = state.copyWith(
-          permissionStatus: permissionStatus,
-          error: null,
+        final permissionStatus = MotionPermissionStatus.fromValue(
+          event.payload['status'] as String?,
         );
+        state = state.copyWith(permissionStatus: permissionStatus, error: null);
         break;
       case MotionChannelEventType.statusChanged:
-        final status =
-            MotionStatusX.fromValue(event.payload['status'] as String? ?? '');
+        final status = MotionStatusX.fromValue(
+          event.payload['status'] as String? ?? '',
+        );
         state = state.copyWith(
           status: status,
           currentSessionId: status == MotionStatus.finished
@@ -279,7 +265,7 @@ class MotionController extends Notifier<MotionState> {
         break;
       case MotionChannelEventType.locationUpdated:
         final point = MotionPoint.fromMap(event.payload);
-        _appendRecordedPoint(point);
+        _handleLocationUpdated(point);
         break;
       case MotionChannelEventType.motionUpdated:
         final realtime = MotionRealtime.fromMap(event.payload);
@@ -295,35 +281,135 @@ class MotionController extends Notifier<MotionState> {
         break;
       case MotionChannelEventType.error:
         final error = MotionError.fromMap(event.payload);
-        state = state.copyWith(
-          status: MotionStatus.error,
-          error: error,
-        );
+        state = state.copyWith(status: MotionStatus.error, error: error);
         break;
     }
   }
 
+  /// 原生若先推送定位点、后推送统计事件，正式页也要先具备可见的实时增长。
+  ///
+  /// 这里基于已采纳点位做一层 Flutter 侧兜底统计，等 `motionUpdated`
+  /// 到来后再由原生统计结果覆盖，避免 UI 依赖单一路径。
+  void _handleLocationUpdated(MotionPoint point) {
+    final previousPoints = state.recordedPoints;
+    final previousPoint = previousPoints.isEmpty ? null : previousPoints.last;
+
+    final appended = _appendRecordedPoint(point);
+    if (!appended) {
+      return;
+    }
+
+    final previousRealtime = state.realtime;
+    final distanceIncrement = previousPoint == null
+        ? 0
+        : _estimateDistanceMeters(previousPoint, point);
+    final nextDistanceMeters =
+        (previousRealtime?.distanceMeters ?? 0) + distanceIncrement;
+    final derivedDurationSeconds = _deriveDurationSeconds(point.timestamp);
+    final nextDurationSeconds = math.max(
+      previousRealtime?.durationSeconds ?? 0,
+      derivedDurationSeconds,
+    );
+    final currentSpeedMps =
+        point.speedMps ?? _deriveSpeedBetweenPoints(previousPoint, point);
+    final averageSpeedMps = nextDurationSeconds > 0
+        ? nextDistanceMeters / nextDurationSeconds
+        : null;
+
+    state = state.copyWith(
+      realtime:
+          (previousRealtime ??
+                  const MotionRealtime(
+                    status: MotionStatus.running,
+                    durationSeconds: 0,
+                    distanceMeters: 0,
+                    pointCount: 0,
+                  ))
+              .copyWith(
+                status: state.status,
+                durationSeconds: nextDurationSeconds,
+                distanceMeters: nextDistanceMeters,
+                currentSpeedMps: currentSpeedMps,
+                averageSpeedMps: averageSpeedMps,
+                pointCount: state.recordedPoints.length,
+                latestPoint: point,
+              ),
+      error: null,
+    );
+  }
+
   /// 追加轨迹点时做一次轻量去重，避免 `locationUpdated` 和
   /// `motionUpdated.latestPoint` 同时到来时重复入列。
-  void _appendRecordedPoint(MotionPoint point) {
+  bool _appendRecordedPoint(MotionPoint point) {
     final points = state.recordedPoints;
 
     if (points.isNotEmpty) {
       final lastPoint = points.last;
-      final isSamePoint = lastPoint.timestamp == point.timestamp &&
+      final isSamePoint =
+          lastPoint.timestamp == point.timestamp &&
           lastPoint.latitude == point.latitude &&
           lastPoint.longitude == point.longitude;
 
       if (isSamePoint) {
-        return;
+        return false;
       }
     }
 
-    state = state.copyWith(
-      recordedPoints: [...points, point],
-      error: null,
-    );
+    state = state.copyWith(recordedPoints: [...points, point], error: null);
+
+    return true;
   }
+
+  /// 用 session 起点与最新点时间戳估算实时时长，避免只有点位事件时 UI 不更新。
+  int _deriveDurationSeconds(int latestTimestampMillis) {
+    final sessionStartTime = state.sessionStartTime;
+    if (sessionStartTime == null) {
+      return state.realtime?.durationSeconds ?? 0;
+    }
+
+    final elapsedMillis = latestTimestampMillis - sessionStartTime;
+    if (elapsedMillis <= 0) {
+      return state.realtime?.durationSeconds ?? 0;
+    }
+
+    return elapsedMillis ~/ 1000;
+  }
+
+  /// 基于前后两个点位估算直线距离，作为正式页实时统计的兜底值。
+  double _estimateDistanceMeters(MotionPoint from, MotionPoint to) {
+    const earthRadiusMeters = 6371000.0;
+    final latitudeDelta = _toRadians(to.latitude - from.latitude);
+    final longitudeDelta = _toRadians(to.longitude - from.longitude);
+    final fromLatitudeRadians = _toRadians(from.latitude);
+    final toLatitudeRadians = _toRadians(to.latitude);
+    final haversine =
+        math.pow(math.sin(latitudeDelta / 2), 2) +
+        math.cos(fromLatitudeRadians) *
+            math.cos(toLatitudeRadians) *
+            math.pow(math.sin(longitudeDelta / 2), 2);
+    final arc = 2 * math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine));
+    return earthRadiusMeters * arc;
+  }
+
+  /// 当原生速度字段缺失时，退化成相邻点位间的平均速度。
+  double? _deriveSpeedBetweenPoints(
+    MotionPoint? previous,
+    MotionPoint current,
+  ) {
+    if (previous == null) {
+      return null;
+    }
+
+    final durationMillis = current.timestamp - previous.timestamp;
+    if (durationMillis <= 0) {
+      return null;
+    }
+
+    final distanceMeters = _estimateDistanceMeters(previous, current);
+    return distanceMeters / (durationMillis / 1000);
+  }
+
+  double _toRadians(double degree) => degree * math.pi / 180;
 
   /// 将原生返回的最终结果整理为 Flutter 侧可直接使用的最终记录。
   ///
@@ -333,8 +419,9 @@ class MotionController extends Notifier<MotionState> {
   MotionSession _normalizeFinishedSession(MotionSession session) {
     final fallbackSessionId = state.currentSessionId ?? session.sessionId;
     final fallbackStartTime = state.sessionStartTime ?? session.startTime;
-    final fallbackPoints =
-        session.points.isEmpty ? state.recordedPoints : session.points;
+    final fallbackPoints = session.points.isEmpty
+        ? state.recordedPoints
+        : session.points;
     final fallbackEndTime = session.endTime == 0
         ? DateTime.now().millisecondsSinceEpoch
         : session.endTime;
@@ -344,7 +431,8 @@ class MotionController extends Notifier<MotionState> {
     final fallbackDistanceMeters = session.totalDistanceMeters > 0
         ? session.totalDistanceMeters
         : state.realtime?.distanceMeters ?? 0;
-    final fallbackAverageSpeed = session.averageSpeedMps ??
+    final fallbackAverageSpeed =
+        session.averageSpeedMps ??
         state.realtime?.averageSpeedMps ??
         state.realtime?.currentSpeedMps;
 
@@ -373,11 +461,7 @@ class MotionController extends Notifier<MotionState> {
   }) {
     state = state.copyWith(
       status: MotionStatus.error,
-      error: MotionError(
-        code: code,
-        message: message,
-        detail: detail,
-      ),
+      error: MotionError(code: code, message: message, detail: detail),
     );
   }
 }

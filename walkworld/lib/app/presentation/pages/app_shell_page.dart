@@ -21,7 +21,7 @@ class AppShellPage extends StatefulWidget {
 }
 
 class _AppShellPageState extends State<AppShellPage> {
-  int _currentIndex = 1;
+  int _currentIndex = 0;
 
   late final List<Widget> _pages = const [
     HomePlaceholderPage(),

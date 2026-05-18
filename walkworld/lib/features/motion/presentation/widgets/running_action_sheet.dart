@@ -7,7 +7,6 @@ import '../../application/application.dart';
 import '../../models/motion_status.dart';
 import 'motion_page_support.dart';
 import 'motion_type_sheet.dart';
-import 'motion_finish_sheet.dart';
 
 /// 弹出运动中面板。
 Future<void> showRunningActionSheet(
@@ -46,7 +45,9 @@ class RunningActionSheet extends ConsumerWidget {
     final distanceKm = ((realtime?.distanceMeters ?? 0) / 1000).toStringAsFixed(
       2,
     );
-    final currentPace = formatMotionPace(realtime?.currentSpeedMps);
+    final currentPace = formatMotionPace(
+      realtime?.currentSpeedMps ?? realtime?.averageSpeedMps,
+    );
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -235,8 +236,6 @@ class RunningActionSheet extends ConsumerWidget {
                       child: InkWell(
                         onTap: () {
                           controller.stopWorkout();
-                          Navigator.of(context).pop();
-                          showMotionFinishSheet(context);
                         },
                         borderRadius: BorderRadius.circular(11.7),
                         child: Center(

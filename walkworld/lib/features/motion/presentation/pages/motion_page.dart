@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_theme_tokens.dart';
 import '../../application/application.dart';
 import '../../models/models.dart';
-import '../../models/motion_status.dart';
+import '../widgets/motion_finish_sheet.dart';
 import '../widgets/motion_map_view.dart';
 import '../widgets/motion_page_support.dart';
 import '../widgets/pre_start_action_area.dart';
@@ -25,6 +27,12 @@ class MotionPage extends ConsumerStatefulWidget {
 }
 
 class _MotionPageState extends ConsumerState<MotionPage> {
+  MotionType? _selectedMotionType;
+  bool _isRunningSheetVisible = false;
+  bool _isFinishSheetVisible = false;
+  bool _isErrorDialogVisible = false;
+  String? _lastPresentedErrorKey;
+
   @override
   void initState() {
     super.initState();
@@ -36,6 +44,11 @@ class _MotionPageState extends ConsumerState<MotionPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<MotionState>(
+      motionControllerProvider,
+      _handleMotionStateChanged,
+    );
+
     final motionState = ref.watch(motionControllerProvider);
     final controller = ref.read(motionControllerProvider.notifier);
     final theme = Theme.of(context);
@@ -106,12 +119,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                       pageTokens: pageTokens,
                       canStart: canStart,
                       // 点击开始运动先弹出类型选择弹窗，确认后再触发开始
-                      onStart: canStart
-                          ? () => _showTypeSheetAndStart(
-                              context,
-                              controller.startWorkout,
-                            )
-                          : null,
+                      onStart: canStart ? () => _handleStart(controller) : null,
                     )
                   : const SizedBox.shrink(key: ValueKey('running')),
             ),
@@ -120,22 +128,201 @@ class _MotionPageState extends ConsumerState<MotionPage> {
       ),
     );
   }
-}
 
-/// 弹出运动类型选择底部弹窗，用户确认后再触发 [onConfirm] 开始运动。
-///
-/// 若用户取消弹窗，则不做任何操作。
-Future<void> _showTypeSheetAndStart(
-  BuildContext context,
-  Future<void> Function() onConfirm,
-) async {
-  final selectedType = await showMotionTypeSheet(context);
-  // 用户取消时 selectedType 为 null，直接返回
-  if (selectedType == null) return;
-  // 当前 startWorkout 暂不接受类型参数，后续可扩展
-  await onConfirm();
+  Future<void> _handleStart(MotionController controller) async {
+    final selectedType = await showMotionTypeSheet(context);
+    // 用户取消时 selectedType 为 null，直接返回
+    if (selectedType == null) return;
 
-  if (context.mounted) {
-    showRunningActionSheet(context, motionType: selectedType);
+    _selectedMotionType = selectedType;
+    _lastPresentedErrorKey = null;
+    // 当前 startWorkout 暂不接受类型参数，后续可扩展
+    await controller.startWorkout();
+  }
+
+  void _handleMotionStateChanged(MotionState? previous, MotionState next) {
+    if (!mounted) {
+      return;
+    }
+
+    final previousStatus = previous?.status;
+    final nextStatus = next.status;
+
+    if (previousStatus == nextStatus) {
+      return;
+    }
+
+    if (nextStatus == MotionStatus.running ||
+        nextStatus == MotionStatus.paused) {
+      _lastPresentedErrorKey = null;
+      _dismissFinishSheetIfNeeded();
+      _showRunningSheetIfNeeded();
+      return;
+    }
+
+    if (nextStatus == MotionStatus.finished) {
+      _lastPresentedErrorKey = null;
+      _dismissErrorDialogIfNeeded();
+      _dismissRunningSheetIfNeeded();
+      _showFinishSheetIfNeeded();
+      return;
+    }
+
+    if (nextStatus == MotionStatus.error) {
+      _dismissFinishSheetIfNeeded();
+      _dismissRunningSheetIfNeeded();
+      _showErrorDialogIfNeeded(next);
+      return;
+    }
+
+    if (nextStatus == MotionStatus.idle) {
+      _lastPresentedErrorKey = null;
+      _dismissErrorDialogIfNeeded();
+      _dismissRunningSheetIfNeeded();
+    }
+  }
+
+  void _showRunningSheetIfNeeded() {
+    if (_isRunningSheetVisible) {
+      return;
+    }
+
+    _isRunningSheetVisible = true;
+    showRunningActionSheet(
+      context,
+      motionType: _selectedMotionType ?? MotionType.hiking,
+    ).whenComplete(() {
+      _isRunningSheetVisible = false;
+    });
+  }
+
+  void _dismissRunningSheetIfNeeded() {
+    if (!_isRunningSheetVisible) {
+      return;
+    }
+
+    unawaited(Navigator.of(context, rootNavigator: true).maybePop());
+  }
+
+  void _showFinishSheetIfNeeded() {
+    if (_isFinishSheetVisible) {
+      return;
+    }
+
+    _isFinishSheetVisible = true;
+    Future<void>.microtask(() async {
+      if (_isRunningSheetVisible) {
+        await Future<void>.delayed(const Duration(milliseconds: 120));
+      }
+
+      if (!mounted) {
+        _isFinishSheetVisible = false;
+        return;
+      }
+
+      await showMotionFinishSheet(context);
+      _isFinishSheetVisible = false;
+    });
+  }
+
+  void _dismissFinishSheetIfNeeded() {
+    if (!_isFinishSheetVisible) {
+      return;
+    }
+
+    unawaited(Navigator.of(context, rootNavigator: true).maybePop());
+  }
+
+  void _showErrorDialogIfNeeded(MotionState state) {
+    final error = state.error;
+    if (error == null) {
+      return;
+    }
+
+    final errorKey = '${error.code}:${error.message}:${error.detail ?? ''}';
+    if (_isErrorDialogVisible || _lastPresentedErrorKey == errorKey) {
+      return;
+    }
+
+    _isErrorDialogVisible = true;
+    _lastPresentedErrorKey = errorKey;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        final actionLabel = _buildErrorActionLabel(error.code);
+
+        return AlertDialog(
+          title: Text(_buildErrorTitle(error.code)),
+          content: Text(_buildErrorMessage(error)),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text('知道了'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text(actionLabel),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(() {
+      _isErrorDialogVisible = false;
+      if (mounted &&
+          ref.read(motionControllerProvider).status != MotionStatus.error) {
+        _lastPresentedErrorKey = null;
+      }
+    });
+  }
+
+  void _dismissErrorDialogIfNeeded() {
+    if (!_isErrorDialogVisible) {
+      return;
+    }
+
+    unawaited(Navigator.of(context, rootNavigator: true).maybePop());
+  }
+
+  String _buildErrorTitle(String code) {
+    return switch (code) {
+      'permission_denied' || 'permission_denied_forever' => '需要定位权限',
+      'location_service_disabled' => '定位服务未开启',
+      'location_start_failed' || 'location_update_failed' => '定位出现异常',
+      'invalid_motion_state' => '当前状态不可操作',
+      _ => '运动暂时无法继续',
+    };
+  }
+
+  String _buildErrorMessage(MotionError error) {
+    final suffix = switch (error.code) {
+      'permission_denied' => '请允许运动页访问定位后再开始。',
+      'permission_denied_forever' => '请到系统设置中开启定位权限后再返回。',
+      'location_service_disabled' => '请先在系统里打开定位服务，然后重新开始运动。',
+      'location_start_failed' ||
+      'location_update_failed' => '请稍后重试；如果问题持续存在，再检查定位权限与网络状态。',
+      'invalid_motion_state' => '请返回当前页面状态后，再执行下一步操作。',
+      _ => '请稍后再试。',
+    };
+    final detail = error.detail?.trim();
+
+    if (detail == null || detail.isEmpty) {
+      return '${error.message}\n\n$suffix';
+    }
+
+    return '${error.message}\n\n$suffix\n\n详情：$detail';
+  }
+
+  String _buildErrorActionLabel(String code) {
+    return switch (code) {
+      'permission_denied' || 'permission_denied_forever' => '去处理',
+      'location_service_disabled' => '去开启',
+      _ => '稍后重试',
+    };
   }
 }

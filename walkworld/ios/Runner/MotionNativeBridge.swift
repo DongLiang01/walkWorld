@@ -689,6 +689,23 @@ extension MotionNativeBridge: CLLocationManagerDelegate {
 }
 
 extension MotionNativeBridge: AMapLocationManagerDelegate {
+  /// 连续定位关闭逆地理编码时，AMap 会优先走这个纯定位回调。
+  ///
+  /// 如果只实现带 `reGeocode` 的重载，正式运动链路会表现成：
+  /// - 状态能进入 running
+  /// - 但持续收不到轨迹点
+  /// - 距离、配速、轨迹线都不更新
+  func amapLocationManager(
+    _ manager: AMapLocationManager!,
+    didUpdate location: CLLocation!
+  ) {
+    guard let location else {
+      return
+    }
+
+    handleLocationUpdate(location)
+  }
+
   func amapLocationManager(
     _ manager: AMapLocationManager!,
     didUpdate location: CLLocation!,
