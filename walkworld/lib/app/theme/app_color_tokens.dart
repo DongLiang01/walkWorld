@@ -210,4 +210,54 @@ class AppColorTokens {
     light: Color(0x21FF6B35),
     dark: Color(0x21FF6B35),
   );
+
+  static const homePageBackground = DltDynamicColor(
+    light: Color(0xFFF0F4F9),
+    dark: Color(0xFF070B17),
+  );
+
+  static const homeCardBackground = DltDynamicColor(
+    light: Color(0xFFFFFFFF),
+    dark: Color(0x0DFFFFFF),
+  );
+
+  static const homeCardBorder = DltDynamicColor(
+    light: Color(0x00FFFFFF),
+    dark: Color(0x1AFFFFFF),
+  );
+
+  static const homeMapCardBackground = DltDynamicColor(
+    light: Color(0xFFFFFFFF),
+    dark: Color(0xEB060B18),
+  );
+
+  static const homeMapCardBorder = DltDynamicColor(
+    light: Color(0x00FFFFFF),
+    dark: Color(0x2400D4FF),
+  );
+
+  static const homeProgressBackground = DltDynamicColor(
+    light: Color(0xFFE5EBF5),
+    dark: Color(0x14FFFFFF),
+  );
+
+  static const homeIconBgBlue = DltDynamicColor(
+    light: Color(0xFFEBF3FF),
+    dark: Color(0x1F00D4FF),
+  );
+
+  static const homeIconBorderBlue = DltDynamicColor(
+    light: Color(0x00FFFFFF),
+    dark: Color(0x3300D4FF),
+  );
+
+  static const homeIconBgPurple = DltDynamicColor(
+    light: Color(0xFFFFF3E5),
+    dark: Color(0x267B5CF5),
+  );
+
+  static const homeIconBorderPurple = DltDynamicColor(
+    light: Color(0x00FFFFFF),
+    dark: Color(0x407B5CF5),
+  );
 }

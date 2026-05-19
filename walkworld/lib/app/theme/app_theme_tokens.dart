@@ -47,6 +47,16 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.motionModalOptionActiveAccent,
     required this.motionTypeHikingBg,
     required this.motionTypeCyclingBg,
+    required this.homePageBackground,
+    required this.homeCardBackground,
+    required this.homeCardBorder,
+    required this.homeMapCardBackground,
+    required this.homeMapCardBorder,
+    required this.homeProgressBackground,
+    required this.homeIconBgBlue,
+    required this.homeIconBorderBlue,
+    required this.homeIconBgPurple,
+    required this.homeIconBorderPurple,
   });
 
   factory AppThemeTokens.resolve(Brightness brightness) {
@@ -98,8 +108,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       motionModalDescription: AppColorTokens.motionModalDescription.resolve(
         brightness,
       ),
-      motionModalOptionBackground:
-          AppColorTokens.motionModalOptionBackground.resolve(brightness),
+      motionModalOptionBackground: AppColorTokens.motionModalOptionBackground
+          .resolve(brightness),
       motionModalOptionBorder: AppColorTokens.motionModalOptionBorder.resolve(
         brightness,
       ),
@@ -116,10 +126,29 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
           .resolve(brightness),
       motionModalMutedActionText: AppColorTokens.motionModalMutedActionText
           .resolve(brightness),
-      motionModalOptionActiveAccent: AppColorTokens.motionModalOptionActiveAccent
+      motionModalOptionActiveAccent: AppColorTokens
+          .motionModalOptionActiveAccent
           .resolve(brightness),
       motionTypeHikingBg: AppColorTokens.motionTypeHikingBg.resolve(brightness),
-      motionTypeCyclingBg: AppColorTokens.motionTypeCyclingBg.resolve(brightness),
+      motionTypeCyclingBg: AppColorTokens.motionTypeCyclingBg.resolve(
+        brightness,
+      ),
+      homePageBackground: AppColorTokens.homePageBackground.resolve(brightness),
+      homeCardBackground: AppColorTokens.homeCardBackground.resolve(brightness),
+      homeCardBorder: AppColorTokens.homeCardBorder.resolve(brightness),
+      homeMapCardBackground: AppColorTokens.homeMapCardBackground.resolve(
+        brightness,
+      ),
+      homeMapCardBorder: AppColorTokens.homeMapCardBorder.resolve(brightness),
+      homeProgressBackground: AppColorTokens.homeProgressBackground.resolve(
+        brightness,
+      ),
+      homeIconBgBlue: AppColorTokens.homeIconBgBlue.resolve(brightness),
+      homeIconBorderBlue: AppColorTokens.homeIconBorderBlue.resolve(brightness),
+      homeIconBgPurple: AppColorTokens.homeIconBgPurple.resolve(brightness),
+      homeIconBorderPurple: AppColorTokens.homeIconBorderPurple.resolve(
+        brightness,
+      ),
     );
   }
 
@@ -236,6 +265,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
 
   /// 运动模块弹窗弱化操作文字色，通常用于“取消”类次级按钮文字。
   final Color motionModalMutedActionText;
+
   /// 运动模块弹窗选项中，代表选中状态的品牌高亮色（如跑步选中时的背景和文字）。
   final Color motionModalOptionActiveAccent;
 
@@ -244,6 +274,36 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
 
   /// 运动模块弹窗选项中，骑行的图标默认背景色。
   final Color motionTypeCyclingBg;
+
+  /// 首页背景底色
+  final Color homePageBackground;
+
+  /// 首页通用卡片背景色
+  final Color homeCardBackground;
+
+  /// 首页通用卡片边框色
+  final Color homeCardBorder;
+
+  /// 首页地图卡片背景色
+  final Color homeMapCardBackground;
+
+  /// 首页地图卡片边框色
+  final Color homeMapCardBorder;
+
+  /// 首页进度条底色
+  final Color homeProgressBackground;
+
+  /// 首页蓝色图标背景色（如路线地图、本周运动）
+  final Color homeIconBgBlue;
+
+  /// 首页蓝色图标边框色
+  final Color homeIconBorderBlue;
+
+  /// 首页紫色图标背景色（如累计旅途）
+  final Color homeIconBgPurple;
+
+  /// 首页紫色图标边框色
+  final Color homeIconBorderPurple;
 
   @override
   AppThemeTokens copyWith({
@@ -288,6 +348,16 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? motionModalOptionActiveAccent,
     Color? motionTypeHikingBg,
     Color? motionTypeCyclingBg,
+    Color? homePageBackground,
+    Color? homeCardBackground,
+    Color? homeCardBorder,
+    Color? homeMapCardBackground,
+    Color? homeMapCardBorder,
+    Color? homeProgressBackground,
+    Color? homeIconBgBlue,
+    Color? homeIconBorderBlue,
+    Color? homeIconBgPurple,
+    Color? homeIconBorderPurple,
   }) {
     return AppThemeTokens(
       brandPrimary: brandPrimary ?? this.brandPrimary,
@@ -337,7 +407,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
           motionModalOptionSelectedBackground ??
           this.motionModalOptionSelectedBackground,
       motionModalOptionSelectedBorder:
-          motionModalOptionSelectedBorder ?? this.motionModalOptionSelectedBorder,
+          motionModalOptionSelectedBorder ??
+          this.motionModalOptionSelectedBorder,
       motionModalMutedActionBackground:
           motionModalMutedActionBackground ??
           this.motionModalMutedActionBackground,
@@ -349,6 +420,18 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
           motionModalOptionActiveAccent ?? this.motionModalOptionActiveAccent,
       motionTypeHikingBg: motionTypeHikingBg ?? this.motionTypeHikingBg,
       motionTypeCyclingBg: motionTypeCyclingBg ?? this.motionTypeCyclingBg,
+      homePageBackground: homePageBackground ?? this.homePageBackground,
+      homeCardBackground: homeCardBackground ?? this.homeCardBackground,
+      homeCardBorder: homeCardBorder ?? this.homeCardBorder,
+      homeMapCardBackground:
+          homeMapCardBackground ?? this.homeMapCardBackground,
+      homeMapCardBorder: homeMapCardBorder ?? this.homeMapCardBorder,
+      homeProgressBackground:
+          homeProgressBackground ?? this.homeProgressBackground,
+      homeIconBgBlue: homeIconBgBlue ?? this.homeIconBgBlue,
+      homeIconBorderBlue: homeIconBorderBlue ?? this.homeIconBorderBlue,
+      homeIconBgPurple: homeIconBgPurple ?? this.homeIconBgPurple,
+      homeIconBorderPurple: homeIconBorderPurple ?? this.homeIconBorderPurple,
     );
   }
 
@@ -510,6 +593,34 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       motionTypeCyclingBg:
           Color.lerp(motionTypeCyclingBg, other.motionTypeCyclingBg, t) ??
           motionTypeCyclingBg,
+      homePageBackground:
+          Color.lerp(homePageBackground, other.homePageBackground, t) ??
+          homePageBackground,
+      homeCardBackground:
+          Color.lerp(homeCardBackground, other.homeCardBackground, t) ??
+          homeCardBackground,
+      homeCardBorder:
+          Color.lerp(homeCardBorder, other.homeCardBorder, t) ?? homeCardBorder,
+      homeMapCardBackground:
+          Color.lerp(homeMapCardBackground, other.homeMapCardBackground, t) ??
+          homeMapCardBackground,
+      homeMapCardBorder:
+          Color.lerp(homeMapCardBorder, other.homeMapCardBorder, t) ??
+          homeMapCardBorder,
+      homeProgressBackground:
+          Color.lerp(homeProgressBackground, other.homeProgressBackground, t) ??
+          homeProgressBackground,
+      homeIconBgBlue:
+          Color.lerp(homeIconBgBlue, other.homeIconBgBlue, t) ?? homeIconBgBlue,
+      homeIconBorderBlue:
+          Color.lerp(homeIconBorderBlue, other.homeIconBorderBlue, t) ??
+          homeIconBorderBlue,
+      homeIconBgPurple:
+          Color.lerp(homeIconBgPurple, other.homeIconBgPurple, t) ??
+          homeIconBgPurple,
+      homeIconBorderPurple:
+          Color.lerp(homeIconBorderPurple, other.homeIconBorderPurple, t) ??
+          homeIconBorderPurple,
     );
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../svg/svg.dart';
 import '../../theme/app_theme_tokens.dart';
-import '../../../features/home/presentation/pages/home_placeholder_page.dart';
+import '../../../features/home/presentation/pages/home_page.dart';
 import '../../../features/motion/presentation/presentation.dart';
 import '../../../features/profile/presentation/pages/profile_placeholder_page.dart';
 
@@ -24,7 +24,7 @@ class _AppShellPageState extends State<AppShellPage> {
   int _currentIndex = 0;
 
   late final List<Widget> _pages = const [
-    HomePlaceholderPage(),
+    HomePage(),
     MotionPage(),
     ProfilePlaceholderPage(),
   ];
