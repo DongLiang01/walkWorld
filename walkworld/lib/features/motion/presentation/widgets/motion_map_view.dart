@@ -16,12 +16,18 @@ class MotionMapView extends StatefulWidget {
   const MotionMapView({
     super.key,
     this.creationParams,
+    this.workoutStartResetToken,
     this.currentPoint,
     this.trackPoints = const [],
   });
 
   /// 创建原生地图视图时传给 iOS 侧的初始化参数。
   final Map<String, Object?>? creationParams;
+
+  /// 每次开始一轮新运动时变化的重置信号。
+  ///
+  /// 当前使用 sessionId 作为 token，只要值变化，就要求原生地图重置相机。
+  final String? workoutStartResetToken;
 
   /// 当前最新位置点。
   final MotionPoint? currentPoint;
@@ -48,6 +54,9 @@ class _MotionMapViewState extends State<MotionMapView> {
 
     final pointChanged =
         oldWidget.currentPoint?.timestamp != widget.currentPoint?.timestamp;
+    final workoutStartResetChanged =
+        oldWidget.workoutStartResetToken != widget.workoutStartResetToken &&
+        widget.workoutStartResetToken != null;
     final trackChanged =
         oldWidget.trackPoints.length != widget.trackPoints.length ||
         (oldWidget.trackPoints.isNotEmpty &&
@@ -55,13 +64,21 @@ class _MotionMapViewState extends State<MotionMapView> {
             oldWidget.trackPoints.last.timestamp !=
                 widget.trackPoints.last.timestamp);
 
+    if (workoutStartResetChanged) {
+      _nativeController!.resetCameraForWorkoutStart(
+        focusPoint: widget.currentPoint,
+      );
+    }
+
     if (pointChanged && widget.currentPoint != null) {
       _nativeController!.updateUserLocation(widget.currentPoint!);
     }
 
     if (trackChanged) {
       if (widget.trackPoints.isEmpty) {
-        _nativeController!.clearTrack();
+        _nativeController!.clearTrack(
+          focusPoint: widget.currentPoint,
+        );
       } else {
         _nativeController!.updateTrack(widget.trackPoints);
       }
@@ -128,7 +145,18 @@ class MotionMapNativeController {
   }
 
   /// 清空原生地图中的轨迹折线和当前位置标记。
-  Future<void> clearTrack() {
-    return _channel.invokeMethod<void>('clearTrack');
+  Future<void> clearTrack({MotionPoint? focusPoint}) {
+    return _channel.invokeMethod<void>(
+      'clearTrack',
+      focusPoint?.toMap(),
+    );
+  }
+
+  /// 每次开始运动都显式重置地图相机，不依赖轨迹数组是否变化。
+  Future<void> resetCameraForWorkoutStart({MotionPoint? focusPoint}) {
+    return _channel.invokeMethod<void>(
+      'resetCameraForWorkoutStart',
+      focusPoint?.toMap(),
+    );
   }
 }

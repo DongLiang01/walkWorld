@@ -28,7 +28,6 @@ class MotionPage extends ConsumerStatefulWidget {
 
 class _MotionPageState extends ConsumerState<MotionPage> {
   MotionType? _selectedMotionType;
-  bool _isRunningSheetVisible = false;
   bool _isFinishSheetVisible = false;
   bool _isErrorDialogVisible = false;
   String? _lastPresentedErrorKey;
@@ -68,6 +67,9 @@ class _MotionPageState extends ConsumerState<MotionPage> {
         motionState.status == MotionStatus.preparing ||
         motionState.status == MotionStatus.finished ||
         motionState.status == MotionStatus.error;
+    final showRunningOverlay =
+        motionState.status == MotionStatus.running ||
+        motionState.status == MotionStatus.paused;
 
     return Scaffold(
       backgroundColor: pageTokens.pageBackground,
@@ -81,6 +83,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                   'showUserLocation': true,
                   'sessionStatus': motionState.status.value,
                 },
+                workoutStartResetToken: motionState.currentSessionId,
                 currentPoint: latestPoint,
                 trackPoints: motionState.recordedPoints,
               ),
@@ -124,6 +127,26 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                   : const SizedBox.shrink(key: ValueKey('running')),
             ),
           ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: IgnorePointer(
+              ignoring: !showRunningOverlay,
+              child: AnimatedSlide(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                offset: showRunningOverlay ? Offset.zero : const Offset(0, 1),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 180),
+                  opacity: showRunningOverlay ? 1 : 0,
+                  child: RunningActionSheet(
+                    motionType: _selectedMotionType ?? MotionType.hiking,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -156,21 +179,18 @@ class _MotionPageState extends ConsumerState<MotionPage> {
         nextStatus == MotionStatus.paused) {
       _lastPresentedErrorKey = null;
       _dismissFinishSheetIfNeeded();
-      _showRunningSheetIfNeeded();
       return;
     }
 
     if (nextStatus == MotionStatus.finished) {
       _lastPresentedErrorKey = null;
       _dismissErrorDialogIfNeeded();
-      _dismissRunningSheetIfNeeded();
       _showFinishSheetIfNeeded();
       return;
     }
 
     if (nextStatus == MotionStatus.error) {
       _dismissFinishSheetIfNeeded();
-      _dismissRunningSheetIfNeeded();
       _showErrorDialogIfNeeded(next);
       return;
     }
@@ -178,30 +198,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
     if (nextStatus == MotionStatus.idle) {
       _lastPresentedErrorKey = null;
       _dismissErrorDialogIfNeeded();
-      _dismissRunningSheetIfNeeded();
     }
-  }
-
-  void _showRunningSheetIfNeeded() {
-    if (_isRunningSheetVisible) {
-      return;
-    }
-
-    _isRunningSheetVisible = true;
-    showRunningActionSheet(
-      context,
-      motionType: _selectedMotionType ?? MotionType.hiking,
-    ).whenComplete(() {
-      _isRunningSheetVisible = false;
-    });
-  }
-
-  void _dismissRunningSheetIfNeeded() {
-    if (!_isRunningSheetVisible) {
-      return;
-    }
-
-    unawaited(Navigator.of(context, rootNavigator: true).maybePop());
   }
 
   void _showFinishSheetIfNeeded() {
@@ -211,9 +208,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
 
     _isFinishSheetVisible = true;
     Future<void>.microtask(() async {
-      if (_isRunningSheetVisible) {
-        await Future<void>.delayed(const Duration(milliseconds: 120));
-      }
+      await Future<void>.delayed(const Duration(milliseconds: 120));
 
       if (!mounted) {
         _isFinishSheetVisible = false;
