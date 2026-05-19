@@ -279,6 +279,24 @@ class MotionController extends Notifier<MotionState> {
           _appendRecordedPoint(realtime.latestPoint!);
         }
         break;
+      case MotionChannelEventType.trackRestored:
+        // App 从后台返回后，原生侧把 recordedLocations 全量推过来。
+        // Flutter 在后台期间 Dart 隔离被挂起，EventChannel 事件全部丢失，
+        // recordedPoints 只保留到进后台前最后一个点；
+        // 这里用原生的完整数组整体替换，保证地图画出真实骑行轨迹而不是直线。
+        final rawPoints =
+            event.payload['points'] as List<Object?>? ?? const [];
+        final restoredPoints = rawPoints
+            .whereType<Map<Object?, Object?>>()
+            .map(MotionPoint.fromMap)
+            .toList();
+        if (restoredPoints.isNotEmpty) {
+          state = state.copyWith(
+            recordedPoints: restoredPoints,
+            error: null,
+          );
+        }
+        break;
       case MotionChannelEventType.error:
         final error = MotionError.fromMap(event.payload);
         state = state.copyWith(status: MotionStatus.error, error: error);

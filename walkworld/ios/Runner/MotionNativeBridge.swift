@@ -40,6 +40,8 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     static let locationUpdated = "locationUpdated"
     static let motionUpdated = "motionUpdated"
     static let error = "error"
+    /// App 从后台返回或 EventChannel 重建时，将完整历史轨迹批量推送给 Flutter。
+    static let trackRestored = "trackRestored"
   }
 
   private enum MotionStatusValue {
@@ -662,6 +664,19 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
 
     if currentStatus != MotionStatusValue.idle {
       pushMotionUpdatedEvent()
+    }
+
+    // App 从后台恢复或 EventChannel 重建时，把原生侧已缓存的完整轨迹批量推给 Flutter。
+    // Flutter 侧在后台期间无法接收事件，recordedPoints 会丢失中间点位；
+    // 这里用 trackRestored 一次性补齐，避免地图出现"起终点直线"的错误轨迹。
+    if (currentStatus == MotionStatusValue.running ||
+        currentStatus == MotionStatusValue.paused) &&
+        !recordedLocations.isEmpty {
+      let allPoints = recordedLocations.map(buildLocationPayload)
+      pushEvent(
+        name: MotionEvent.trackRestored,
+        payload: ["points": allPoints]
+      )
     }
 
     if currentStatus == MotionStatusValue.running {

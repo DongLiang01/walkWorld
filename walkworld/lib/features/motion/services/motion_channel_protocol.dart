@@ -27,7 +27,9 @@ enum MotionChannelEventType {
   statusChanged('statusChanged'),
   locationUpdated('locationUpdated'),
   motionUpdated('motionUpdated'),
-  error('error');
+  error('error'),
+  /// App 从后台恢复后，原生侧批量推送完整历史轨迹，用于补齐后台期间丢失的点位。
+  trackRestored('trackRestored');
 
   const MotionChannelEventType(this.value);
 
