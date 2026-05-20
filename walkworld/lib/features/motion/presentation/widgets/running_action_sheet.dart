@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../app/svg/app_svg_icon.dart';
+import '../../../../app/svg/svg.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
 import '../../application/application.dart';
 import '../../models/motion_status.dart';
@@ -257,7 +257,7 @@ class _ActionsRow extends StatelessWidget {
                 children: [
                   if (isRunning)
                     AppSvgIcon(
-                      'assets/icons/motion/motion_action_pause.svg',
+                      AppSvgAssets.motion('motion_action_pause'),
                       color: pageTokens.mutedActionText,
                       size: 11.7,
                     )
