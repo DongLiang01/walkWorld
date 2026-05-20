@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:walkworld/app/svg/app_svg_assets.dart';
 
 import '../../../../app/svg/app_svg_icon.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
@@ -209,8 +210,8 @@ class _MapCard extends StatelessWidget {
             padding: const EdgeInsets.only(left: 14, top: 12, right: 14),
             child: _CardIconTitle(
               svgPath: isDark
-                  ? 'assets/icons/home/map_night.svg'
-                  : 'assets/icons/home/map_day.svg',
+                  ? AppSvgAssets.home('map_night')
+                  : AppSvgAssets.home('map_day'),
               iconBg: tokens.homeIconBgBlue,
               iconBorder: tokens.homeIconBorderBlue,
               title: '路线地图',
@@ -373,8 +374,8 @@ class _WeeklyExerciseCard extends StatelessWidget {
         children: [
           _CardIconTitle(
             svgPath: isDark
-                ? 'assets/icons/home/week_exercise_night.svg'
-                : 'assets/icons/home/week_exercise_day.svg',
+                ? AppSvgAssets.home('week_exercise_night')
+                : AppSvgAssets.home('week_exercise_day'),
             iconBg: tokens.homeIconBgBlue,
             iconBorder: tokens.homeIconBorderBlue,
             title: '本周运动',
@@ -444,8 +445,8 @@ class _TotalTravelCard extends StatelessWidget {
         children: [
           _CardIconTitle(
             svgPath: isDark
-                ? 'assets/icons/home/total_travel_night.svg'
-                : 'assets/icons/home/total_travel_day.svg',
+                ? AppSvgAssets.home('total_travel_night')
+                : AppSvgAssets.home('total_travel_day'),
             iconBg: tokens.homeIconBgPurple,
             iconBorder: tokens.homeIconBorderPurple,
             title: '累计旅途',

@@ -260,4 +260,99 @@ class AppColorTokens {
     light: Color(0x00FFFFFF),
     dark: Color(0x407B5CF5),
   );
+
+  static const profilePageBackground = DltDynamicColor(
+    light: Color(0xFFF0F4F9),
+    dark: Color(0xFF0A1020),
+  );
+
+  static const profileCardBackground = DltDynamicColor(
+    light: Color(0xFFFFFFFF),
+    dark: Color(0xFF121C30),
+  );
+
+  static const profileCardBorder = DltDynamicColor(
+    light: Color(0x0F000000),
+    dark: Color(0x1AFFFFFF),
+  );
+
+  static const profileTextPrimary = DltDynamicColor(
+    light: Color(0xFF0D1117),
+    dark: Color(0xFFFFFFFF),
+  );
+
+  static const profileTextSecondary = DltDynamicColor(
+    light: Color(0xFF9CA3AF),
+    dark: Color(0xFF4A6080),
+  );
+
+  static const profileAccentBlue = DltDynamicColor(
+    light: Color(0xFF1A6FDB),
+    dark: Color(0xFF00D4FF),
+  );
+
+  static const profileAccentOrange = DltDynamicColor(
+    light: Color(0xFFFF6B20),
+    dark: Color(0xFFFF9050),
+  );
+
+  static const profileAccentPurple = DltDynamicColor(
+    light: Color(0xFF7B5CF5),
+    dark: Color(0xFFA085E8),
+  );
+
+  static const profileIconBgBlue = DltDynamicColor(
+    light: Color(0xFFEBF3FF),
+    dark: Color(0x1F00D4FF),
+  );
+
+  static const profileIconBorderBlue = DltDynamicColor(
+    light: Color(0x241A6FDB),
+    dark: Color(0x3300D4FF),
+  );
+
+  static const profileIconBgOrange = DltDynamicColor(
+    light: Color(0x1AFF6B20),
+    dark: Color(0x2EFF7828),
+  );
+
+  static const profileIconBorderOrange = DltDynamicColor(
+    light: Color(0x2EFF7828),
+    dark: Color(0x40FF9050),
+  );
+
+  static const profileIconBgPurple = DltDynamicColor(
+    light: Color(0x147B5CF5),
+    dark: Color(0x247B5CF5),
+  );
+
+  static const profileIconBorderPurple = DltDynamicColor(
+    light: Color(0x247B5CF5),
+    dark: Color(0x3D7B5CF5),
+  );
+
+  static const profileIconBgGreen = DltDynamicColor(
+    light: Color(0x1728A745),
+    dark: Color(0x243ED87E),
+  );
+
+  static const profileIconBorderGreen = DltDynamicColor(
+    light: Color(0x1F28A745),
+    dark: Color(0x383ED87E),
+  );
+
+  static const profileProgressStart = DltDynamicColor(
+    light: Color(0xFF1A6FDB),
+    dark: Color(0xFF00D4FF),
+  );
+
+  static const profileProgressEnd = DltDynamicColor(
+    light: Color(0xFF5AABFF),
+    dark: Color(0xFF7B5CF5),
+  );
+
+  static const profileProgressBg = DltDynamicColor(
+    light: Color(0xFFE5EBF5),
+    dark: Color(0x1AFFFFFF),
+  );
 }

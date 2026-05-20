@@ -28,4 +28,5 @@ flutter:
     - assets/icons/
     - assets/icons/tabbar/
     - assets/icons/motion/
+    - assets/icons/profile/
     - assets/icons/home/

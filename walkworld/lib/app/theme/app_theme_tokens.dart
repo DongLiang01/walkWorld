@@ -57,6 +57,25 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.homeIconBorderBlue,
     required this.homeIconBgPurple,
     required this.homeIconBorderPurple,
+    required this.profilePageBackground,
+    required this.profileCardBackground,
+    required this.profileCardBorder,
+    required this.profileTextPrimary,
+    required this.profileTextSecondary,
+    required this.profileAccentBlue,
+    required this.profileAccentOrange,
+    required this.profileAccentPurple,
+    required this.profileIconBgBlue,
+    required this.profileIconBorderBlue,
+    required this.profileIconBgOrange,
+    required this.profileIconBorderOrange,
+    required this.profileIconBgPurple,
+    required this.profileIconBorderPurple,
+    required this.profileIconBgGreen,
+    required this.profileIconBorderGreen,
+    required this.profileProgressStart,
+    required this.profileProgressEnd,
+    required this.profileProgressBg,
   });
 
   factory AppThemeTokens.resolve(Brightness brightness) {
@@ -149,6 +168,49 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       homeIconBorderPurple: AppColorTokens.homeIconBorderPurple.resolve(
         brightness,
       ),
+      profilePageBackground: AppColorTokens.profilePageBackground.resolve(
+        brightness,
+      ),
+      profileCardBackground: AppColorTokens.profileCardBackground.resolve(
+        brightness,
+      ),
+      profileCardBorder: AppColorTokens.profileCardBorder.resolve(brightness),
+      profileTextPrimary: AppColorTokens.profileTextPrimary.resolve(brightness),
+      profileTextSecondary: AppColorTokens.profileTextSecondary.resolve(
+        brightness,
+      ),
+      profileAccentBlue: AppColorTokens.profileAccentBlue.resolve(brightness),
+      profileAccentOrange: AppColorTokens.profileAccentOrange.resolve(
+        brightness,
+      ),
+      profileAccentPurple: AppColorTokens.profileAccentPurple.resolve(
+        brightness,
+      ),
+      profileIconBgBlue: AppColorTokens.profileIconBgBlue.resolve(brightness),
+      profileIconBorderBlue: AppColorTokens.profileIconBorderBlue.resolve(
+        brightness,
+      ),
+      profileIconBgOrange: AppColorTokens.profileIconBgOrange.resolve(
+        brightness,
+      ),
+      profileIconBorderOrange: AppColorTokens.profileIconBorderOrange.resolve(
+        brightness,
+      ),
+      profileIconBgPurple: AppColorTokens.profileIconBgPurple.resolve(
+        brightness,
+      ),
+      profileIconBorderPurple: AppColorTokens.profileIconBorderPurple.resolve(
+        brightness,
+      ),
+      profileIconBgGreen: AppColorTokens.profileIconBgGreen.resolve(brightness),
+      profileIconBorderGreen: AppColorTokens.profileIconBorderGreen.resolve(
+        brightness,
+      ),
+      profileProgressStart: AppColorTokens.profileProgressStart.resolve(
+        brightness,
+      ),
+      profileProgressEnd: AppColorTokens.profileProgressEnd.resolve(brightness),
+      profileProgressBg: AppColorTokens.profileProgressBg.resolve(brightness),
     );
   }
 
@@ -305,6 +367,63 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   /// 首页紫色图标边框色
   final Color homeIconBorderPurple;
 
+  /// profilePageBackground
+  final Color profilePageBackground;
+
+  /// profileCardBackground
+  final Color profileCardBackground;
+
+  /// profileCardBorder
+  final Color profileCardBorder;
+
+  /// profileTextPrimary
+  final Color profileTextPrimary;
+
+  /// profileTextSecondary
+  final Color profileTextSecondary;
+
+  /// profileAccentBlue
+  final Color profileAccentBlue;
+
+  /// profileAccentOrange
+  final Color profileAccentOrange;
+
+  /// profileAccentPurple
+  final Color profileAccentPurple;
+
+  /// profileIconBgBlue
+  final Color profileIconBgBlue;
+
+  /// profileIconBorderBlue
+  final Color profileIconBorderBlue;
+
+  /// profileIconBgOrange
+  final Color profileIconBgOrange;
+
+  /// profileIconBorderOrange
+  final Color profileIconBorderOrange;
+
+  /// profileIconBgPurple
+  final Color profileIconBgPurple;
+
+  /// profileIconBorderPurple
+  final Color profileIconBorderPurple;
+
+  /// profileIconBgGreen
+  final Color profileIconBgGreen;
+
+  /// profileIconBorderGreen
+  final Color profileIconBorderGreen;
+
+  /// profileProgressStart
+  final Color profileProgressStart;
+
+  /// profileProgressEnd
+  final Color profileProgressEnd;
+
+  /// profileProgressBg
+  final Color profileProgressBg;
+
   @override
   AppThemeTokens copyWith({
     Color? brandPrimary,
@@ -358,6 +477,25 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? homeIconBorderBlue,
     Color? homeIconBgPurple,
     Color? homeIconBorderPurple,
+    Color? profilePageBackground,
+    Color? profileCardBackground,
+    Color? profileCardBorder,
+    Color? profileTextPrimary,
+    Color? profileTextSecondary,
+    Color? profileAccentBlue,
+    Color? profileAccentOrange,
+    Color? profileAccentPurple,
+    Color? profileIconBgBlue,
+    Color? profileIconBorderBlue,
+    Color? profileIconBgOrange,
+    Color? profileIconBorderOrange,
+    Color? profileIconBgPurple,
+    Color? profileIconBorderPurple,
+    Color? profileIconBgGreen,
+    Color? profileIconBorderGreen,
+    Color? profileProgressStart,
+    Color? profileProgressEnd,
+    Color? profileProgressBg,
   }) {
     return AppThemeTokens(
       brandPrimary: brandPrimary ?? this.brandPrimary,
@@ -432,6 +570,31 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       homeIconBorderBlue: homeIconBorderBlue ?? this.homeIconBorderBlue,
       homeIconBgPurple: homeIconBgPurple ?? this.homeIconBgPurple,
       homeIconBorderPurple: homeIconBorderPurple ?? this.homeIconBorderPurple,
+      profilePageBackground:
+          profilePageBackground ?? this.profilePageBackground,
+      profileCardBackground:
+          profileCardBackground ?? this.profileCardBackground,
+      profileCardBorder: profileCardBorder ?? this.profileCardBorder,
+      profileTextPrimary: profileTextPrimary ?? this.profileTextPrimary,
+      profileTextSecondary: profileTextSecondary ?? this.profileTextSecondary,
+      profileAccentBlue: profileAccentBlue ?? this.profileAccentBlue,
+      profileAccentOrange: profileAccentOrange ?? this.profileAccentOrange,
+      profileAccentPurple: profileAccentPurple ?? this.profileAccentPurple,
+      profileIconBgBlue: profileIconBgBlue ?? this.profileIconBgBlue,
+      profileIconBorderBlue:
+          profileIconBorderBlue ?? this.profileIconBorderBlue,
+      profileIconBgOrange: profileIconBgOrange ?? this.profileIconBgOrange,
+      profileIconBorderOrange:
+          profileIconBorderOrange ?? this.profileIconBorderOrange,
+      profileIconBgPurple: profileIconBgPurple ?? this.profileIconBgPurple,
+      profileIconBorderPurple:
+          profileIconBorderPurple ?? this.profileIconBorderPurple,
+      profileIconBgGreen: profileIconBgGreen ?? this.profileIconBgGreen,
+      profileIconBorderGreen:
+          profileIconBorderGreen ?? this.profileIconBorderGreen,
+      profileProgressStart: profileProgressStart ?? this.profileProgressStart,
+      profileProgressEnd: profileProgressEnd ?? this.profileProgressEnd,
+      profileProgressBg: profileProgressBg ?? this.profileProgressBg,
     );
   }
 
@@ -621,6 +784,75 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       homeIconBorderPurple:
           Color.lerp(homeIconBorderPurple, other.homeIconBorderPurple, t) ??
           homeIconBorderPurple,
+      profilePageBackground:
+          Color.lerp(profilePageBackground, other.profilePageBackground, t) ??
+          profilePageBackground,
+      profileCardBackground:
+          Color.lerp(profileCardBackground, other.profileCardBackground, t) ??
+          profileCardBackground,
+      profileCardBorder:
+          Color.lerp(profileCardBorder, other.profileCardBorder, t) ??
+          profileCardBorder,
+      profileTextPrimary:
+          Color.lerp(profileTextPrimary, other.profileTextPrimary, t) ??
+          profileTextPrimary,
+      profileTextSecondary:
+          Color.lerp(profileTextSecondary, other.profileTextSecondary, t) ??
+          profileTextSecondary,
+      profileAccentBlue:
+          Color.lerp(profileAccentBlue, other.profileAccentBlue, t) ??
+          profileAccentBlue,
+      profileAccentOrange:
+          Color.lerp(profileAccentOrange, other.profileAccentOrange, t) ??
+          profileAccentOrange,
+      profileAccentPurple:
+          Color.lerp(profileAccentPurple, other.profileAccentPurple, t) ??
+          profileAccentPurple,
+      profileIconBgBlue:
+          Color.lerp(profileIconBgBlue, other.profileIconBgBlue, t) ??
+          profileIconBgBlue,
+      profileIconBorderBlue:
+          Color.lerp(profileIconBorderBlue, other.profileIconBorderBlue, t) ??
+          profileIconBorderBlue,
+      profileIconBgOrange:
+          Color.lerp(profileIconBgOrange, other.profileIconBgOrange, t) ??
+          profileIconBgOrange,
+      profileIconBorderOrange:
+          Color.lerp(
+            profileIconBorderOrange,
+            other.profileIconBorderOrange,
+            t,
+          ) ??
+          profileIconBorderOrange,
+      profileIconBgPurple:
+          Color.lerp(profileIconBgPurple, other.profileIconBgPurple, t) ??
+          profileIconBgPurple,
+      profileIconBorderPurple:
+          Color.lerp(
+            profileIconBorderPurple,
+            other.profileIconBorderPurple,
+            t,
+          ) ??
+          profileIconBorderPurple,
+      profileIconBgGreen:
+          Color.lerp(profileIconBgGreen, other.profileIconBgGreen, t) ??
+          profileIconBgGreen,
+      profileIconBorderGreen:
+          Color.lerp(
+            profileIconBorderGreen,
+            other.profileIconBorderGreen,
+            t,
+          ) ??
+          profileIconBorderGreen,
+      profileProgressStart:
+          Color.lerp(profileProgressStart, other.profileProgressStart, t) ??
+          profileProgressStart,
+      profileProgressEnd:
+          Color.lerp(profileProgressEnd, other.profileProgressEnd, t) ??
+          profileProgressEnd,
+      profileProgressBg:
+          Color.lerp(profileProgressBg, other.profileProgressBg, t) ??
+          profileProgressBg,
     );
   }
 }

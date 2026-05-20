@@ -4,7 +4,7 @@ import '../../svg/svg.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../../../features/home/presentation/pages/home_page.dart';
 import '../../../features/motion/presentation/presentation.dart';
-import '../../../features/profile/presentation/pages/profile_placeholder_page.dart';
+import '../../../features/profile/presentation/pages/profile_page.dart';
 
 /// 应用根壳页面。
 ///
@@ -26,7 +26,7 @@ class _AppShellPageState extends State<AppShellPage> {
   late final List<Widget> _pages = const [
     HomePage(),
     MotionPage(),
-    ProfilePlaceholderPage(),
+    ProfilePage(),
   ];
 
   @override
