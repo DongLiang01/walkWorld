@@ -4,9 +4,11 @@ import UIKit
 /// 负责向 Flutter 注册运动地图原生视图工厂。
 final class MotionMapViewFactory: NSObject, FlutterPlatformViewFactory {
   private let messenger: FlutterBinaryMessenger
+  private let bridge: MotionNativeBridge
 
-  init(messenger: FlutterBinaryMessenger) {
+  init(messenger: FlutterBinaryMessenger, bridge: MotionNativeBridge) {
     self.messenger = messenger
+    self.bridge = bridge
     super.init()
   }
 
@@ -15,12 +17,14 @@ final class MotionMapViewFactory: NSObject, FlutterPlatformViewFactory {
     viewIdentifier viewId: Int64,
     arguments args: Any?
   ) -> FlutterPlatformView {
-    MotionMapPlatformView(
+    let view = MotionMapPlatformView(
       frame: frame,
       viewIdentifier: viewId,
       arguments: args,
       messenger: messenger
     )
+    bridge.mapView = view
+    return view
   }
 
   func createArgsCodec() -> FlutterMessageCodec & NSObjectProtocol {

@@ -8,17 +8,16 @@ import '../../models/models.dart';
 ///
 /// 这个组件负责两件事：
 /// 1. 承载 iOS 原生 `PlatformView`
-/// 2. 把 Flutter 当前持有的位置点和轨迹点同步给原生地图
+/// 2. 把 Flutter 当前持有的位置点和运动开始重置信号同步给原生地图
 ///
-/// 原生地图一旦创建成功，后续的当前位置刷新和轨迹绘制都通过
-/// 当前 viewId 对应的专属 MethodChannel 完成。
+/// 原生地图一旦创建成功，后续的当前位置刷新和开始运动时的相机重置
+/// 都通过当前 viewId 对应的专属 MethodChannel 完成。
 class MotionMapView extends StatefulWidget {
   const MotionMapView({
     super.key,
     this.creationParams,
     this.workoutStartResetToken,
     this.currentPoint,
-    this.trackPoints = const [],
   });
 
   /// 创建原生地图视图时传给 iOS 侧的初始化参数。
@@ -31,9 +30,6 @@ class MotionMapView extends StatefulWidget {
 
   /// 当前最新位置点。
   final MotionPoint? currentPoint;
-
-  /// 当前完整轨迹点集合。
-  final List<MotionPoint> trackPoints;
 
   static const String viewType = 'walkworld/motion_map_view';
 
@@ -57,12 +53,6 @@ class _MotionMapViewState extends State<MotionMapView> {
     final workoutStartResetChanged =
         oldWidget.workoutStartResetToken != widget.workoutStartResetToken &&
         widget.workoutStartResetToken != null;
-    final trackChanged =
-        oldWidget.trackPoints.length != widget.trackPoints.length ||
-        (oldWidget.trackPoints.isNotEmpty &&
-            widget.trackPoints.isNotEmpty &&
-            oldWidget.trackPoints.last.timestamp !=
-                widget.trackPoints.last.timestamp);
 
     if (workoutStartResetChanged) {
       _nativeController!.resetCameraForWorkoutStart(
@@ -73,16 +63,6 @@ class _MotionMapViewState extends State<MotionMapView> {
     if (pointChanged && widget.currentPoint != null) {
       _nativeController!.updateUserLocation(widget.currentPoint!);
     }
-
-    if (trackChanged) {
-      if (widget.trackPoints.isEmpty) {
-        _nativeController!.clearTrack(
-          focusPoint: widget.currentPoint,
-        );
-      } else {
-        _nativeController!.updateTrack(widget.trackPoints);
-      }
-    }
   }
 
   @override
@@ -90,9 +70,7 @@ class _MotionMapViewState extends State<MotionMapView> {
     if (defaultTargetPlatform != TargetPlatform.iOS) {
       return const ColoredBox(
         color: Color(0xFFF4F6F8),
-        child: Center(
-          child: Text('当前地图容器仅实现了 iOS 原生视图接入。'),
-        ),
+        child: Center(child: Text('当前地图容器仅实现了 iOS 原生视图接入。')),
       );
     }
 
@@ -111,10 +89,6 @@ class _MotionMapViewState extends State<MotionMapView> {
     if (widget.currentPoint != null) {
       await controller.updateUserLocation(widget.currentPoint!);
     }
-
-    if (widget.trackPoints.isNotEmpty) {
-      await controller.updateTrack(widget.trackPoints);
-    }
   }
 }
 
@@ -123,9 +97,8 @@ class _MotionMapViewState extends State<MotionMapView> {
 /// 每个 `PlatformView` 都会分配一个唯一的 viewId。
 /// 这里用 viewId 拼出专属 MethodChannel，避免多个地图实例之间串消息。
 class MotionMapNativeController {
-  MotionMapNativeController({
-    required int viewId,
-  }) : _channel = MethodChannel('walkworld/motion_map_control_$viewId');
+  MotionMapNativeController({required int viewId})
+    : _channel = MethodChannel('walkworld/motion_map_control_$viewId');
 
   final MethodChannel _channel;
 
@@ -136,20 +109,14 @@ class MotionMapNativeController {
 
   /// 刷新原生地图中的轨迹折线。
   Future<void> updateTrack(List<MotionPoint> points) {
-    return _channel.invokeMethod<void>(
-      'updateTrack',
-      {
-        'points': points.map((point) => point.toMap()).toList(),
-      },
-    );
+    return _channel.invokeMethod<void>('updateTrack', {
+      'points': points.map((point) => point.toMap()).toList(),
+    });
   }
 
   /// 清空原生地图中的轨迹折线和当前位置标记。
   Future<void> clearTrack({MotionPoint? focusPoint}) {
-    return _channel.invokeMethod<void>(
-      'clearTrack',
-      focusPoint?.toMap(),
-    );
+    return _channel.invokeMethod<void>('clearTrack', focusPoint?.toMap());
   }
 
   /// 每次开始运动都显式重置地图相机，不依赖轨迹数组是否变化。

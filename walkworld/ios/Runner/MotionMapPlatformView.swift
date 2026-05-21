@@ -1,6 +1,7 @@
 import Flutter
 import MAMapKit
 import UIKit
+import CoreLocation
 
 /// 当前阶段的地图原生容器。
 ///
@@ -16,6 +17,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   private let methodChannel: FlutterMethodChannel
   private var trackPolyline: MAPolyline?
   private var trackAnnotation: MAPointAnnotation?
+  private var nativeTrackCoordinates: [CLLocationCoordinate2D] = []
   private var hasCenteredOnUserLocation = false
   private var hasFittedTrackViewport = false
 
@@ -187,39 +189,76 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
 
   /// 刷新轨迹折线，并尝试让地图视口覆盖整条轨迹。
   private func updateTrackPolyline(coordinates: [CLLocationCoordinate2D]) {
-    if let existingPolyline = trackPolyline {
-      mapView.remove(existingPolyline)
-    }
-
-    guard !coordinates.isEmpty else {
-      trackPolyline = nil
-      return
-    }
-
-    var mutableCoordinates = coordinates
-    let polyline = MAPolyline(coordinates: &mutableCoordinates, count: UInt(coordinates.count))
-    trackPolyline = polyline
-    mapView.add(polyline)
+    nativeTrackCoordinates = coordinates
+    syncTrackPolyline()
 
     /// 仅在首次拿到轨迹时自动对焦一次，后续保留用户手动拖拽后的视角。
     guard !hasFittedTrackViewport else {
       return
     }
 
-    if coordinates.count == 1, let firstCoordinate = coordinates.first {
+    if nativeTrackCoordinates.count == 1, let firstCoordinate = nativeTrackCoordinates.first {
       mapView.setCenter(firstCoordinate, animated: false)
       hasCenteredOnUserLocation = true
       hasFittedTrackViewport = true
       return
     }
 
-    mapView.showOverlays([polyline], edgePadding: UIEdgeInsets(top: 80, left: 40, bottom: 80, right: 40), animated: false)
+    guard let trackPolyline else {
+      return
+    }
+
+    mapView.showOverlays([trackPolyline], edgePadding: UIEdgeInsets(top: 80, left: 40, bottom: 80, right: 40), animated: false)
     hasCenteredOnUserLocation = true
     hasFittedTrackViewport = true
   }
 
+  /// 原生定位采到新点时，直接追加到地图轨迹，无需 Flutter 中转。
+  func appendTrackPoint(_ location: CLLocation) {
+    nativeTrackCoordinates.append(location.coordinate)
+    guard nativeTrackCoordinates.count >= 2 else {
+      return
+    }
+
+    syncTrackPolyline()
+  }
+
+  /// App 回前台时，用原生完整历史点重绘整条轨迹。
+  func restoreTrack(_ locations: [CLLocation]) {
+    nativeTrackCoordinates = locations.map(\.coordinate)
+    syncTrackPolyline()
+  }
+
+  /// 统一同步轨迹折线：
+  /// 1. 首次有线时创建 overlay
+  /// 2. 后续追加点位时直接复用同一条 polyline，避免反复 remove/add
+  private func syncTrackPolyline() {
+    guard nativeTrackCoordinates.count >= 2 else {
+      if let existingPolyline = trackPolyline {
+        mapView.remove(existingPolyline)
+        trackPolyline = nil
+      }
+      return
+    }
+
+    var coordinates = nativeTrackCoordinates
+    if let existingPolyline = trackPolyline {
+      _ = existingPolyline.setPolylineWithCoordinates(
+        &coordinates,
+        count: coordinates.count
+      )
+      return
+    }
+
+    let polyline = MAPolyline(coordinates: &coordinates, count: UInt(coordinates.count))
+    trackPolyline = polyline
+    mapView.add(polyline)
+  }
+
   /// 清空当前位置标记和轨迹折线。
   private func clearTrack(focusCoordinate: CLLocationCoordinate2D? = nil) {
+    nativeTrackCoordinates.removeAll()
+
     if let annotation = trackAnnotation {
       mapView.removeAnnotation(annotation)
       trackAnnotation = nil
@@ -251,6 +290,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
 
   /// 开始新一轮运动时，强制把地图缩放和中心恢复到起跑态。
   private func resetCameraForWorkoutStart(focusCoordinate: CLLocationCoordinate2D? = nil) {
+    clearTrack(focusCoordinate: focusCoordinate)
     hasCenteredOnUserLocation = false
     hasFittedTrackViewport = false
     mapView.setZoomLevel(MapCameraConfig.initialZoomLevel, animated: false)

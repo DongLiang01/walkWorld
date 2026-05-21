@@ -2,6 +2,7 @@ import AMapLocationKit
 import CoreLocation
 import Flutter
 import Foundation
+import UIKit
 
 /// 负责运动模块在 iOS 侧的 MethodChannel / EventChannel / 定位能力接入。
 ///
@@ -35,8 +36,8 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
       maxAcceptedDerivedSpeedMps: 6,
       minIntervalForJumpDetectionSeconds: 0.5,
       directionCheckWindowSeconds: 3.0,
-      maxDirectionChangeForSlowMoveDegrees: 120,
-      slowMoveSpeedThresholdMps: 1.5
+      maxDirectionChangeForSlowMoveDegrees: 145,
+      slowMoveSpeedThresholdMps: 0.8
     )
 
     /// 跑步参数组：速度比徒步快，最小距离略放宽，跳点阈值稍提高。
@@ -95,6 +96,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   private let eventChannel: FlutterEventChannel
   private let permissionManager = CLLocationManager()
   private let locationManager = AMapLocationManager()
+  weak var mapView: MotionMapPlatformView?
 
   private var eventSink: FlutterEventSink?
   private var pendingPermissionResult: FlutterResult?
@@ -115,6 +117,8 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   private var filterConfig: MotionFilterConfig = .hiking
   /// 用于方向角突变检测的短时间窗口内的最近几个点（最多保留 3 个）。
   private var recentDirectionCheckPoints: [CLLocation] = []
+  /// 后台期间若仍有新轨迹点入列，则在回前台时补一次全量恢复。
+  private var needsTrackRestoreOnBecomeActive = false
 
   init(messenger: FlutterBinaryMessenger) {
     self.methodChannel = FlutterMethodChannel(
@@ -130,6 +134,16 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     setupPermissionManager()
     setupLocationManager()
     bindChannels()
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(handleAppDidBecomeActive),
+      name: UIApplication.didBecomeActiveNotification,
+      object: nil
+    )
+  }
+
+  deinit {
+    NotificationCenter.default.removeObserver(self)
   }
 
   private func setupPermissionManager() {
@@ -423,10 +437,46 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     // 同步更新方向角检测窗口。
     updateDirectionCheckWindow(location)
     appendSpeedSampleIfNeeded(from: location)
+    // 实时画线直接交给原生地图，避免 Flutter 在后台冻结时丢失中间轨迹。
+    mapView?.appendTrackPoint(location)
+    if UIApplication.shared.applicationState != .active {
+      needsTrackRestoreOnBecomeActive = true
+    }
 
     let locationPayload = buildLocationPayload(location)
     pushEvent(name: MotionEvent.locationUpdated, payload: locationPayload)
     pushMotionUpdatedEvent(latestLocation: location)
+  }
+
+  @objc private func handleAppDidBecomeActive() {
+    guard currentStatus == MotionStatusValue.running ||
+            currentStatus == MotionStatusValue.paused else {
+      return
+    }
+
+    guard needsTrackRestoreOnBecomeActive else {
+      if currentStatus == MotionStatusValue.running {
+        startRealtimeTickerIfNeeded()
+      }
+      return
+    }
+
+    needsTrackRestoreOnBecomeActive = false
+
+    // 回到前台后，用原生完整轨迹重绘地图，补齐后台期间丢失的线段。
+    mapView?.restoreTrack(recordedLocations)
+
+    if !recordedLocations.isEmpty, eventSink != nil {
+      let allPoints = recordedLocations.map(buildLocationPayload)
+      pushEvent(
+        name: MotionEvent.trackRestored,
+        payload: ["points": allPoints]
+      )
+    }
+
+    if currentStatus == MotionStatusValue.running {
+      startRealtimeTickerIfNeeded()
+    }
   }
 
   private func handleLocationError(_ error: NSError) {
@@ -765,6 +815,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     sessionStartTimeMillis = nil
     accumulatedPausedDurationMillis = 0
     pauseStartedAtMillis = nil
+    needsTrackRestoreOnBecomeActive = false
     totalDistanceMeters = 0
     recentSpeedSamples.removeAll()
     recordedLocations.removeAll()

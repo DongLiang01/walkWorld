@@ -20,9 +20,12 @@ import UIKit
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
 
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MotionMapViewFactory") {
-      let factory = MotionMapViewFactory(messenger: registrar.messenger())
-      registrar.register(factory, withId: "walkworld/motion_map_view")
       motionNativeBridge = MotionNativeBridge(messenger: registrar.messenger())
+      let factory = MotionMapViewFactory(
+        messenger: registrar.messenger(),
+        bridge: motionNativeBridge!
+      )
+      registrar.register(factory, withId: "walkworld/motion_map_view")
     }
   }
 

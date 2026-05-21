@@ -85,7 +85,6 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                 },
                 workoutStartResetToken: motionState.currentSessionId,
                 currentPoint: latestPoint,
-                trackPoints: motionState.recordedPoints,
               ),
             ),
           ),
