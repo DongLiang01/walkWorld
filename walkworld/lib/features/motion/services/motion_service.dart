@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+import '../presentation/widgets/motion_type_sheet.dart';
 import 'motion_channel_models.dart';
 import 'motion_channel_protocol.dart';
 
@@ -19,6 +20,7 @@ abstract class MotionService {
   /// 开始一次新的运动会话。
   Future<MotionCommandResult> startWorkout({
     required String sessionId,
+    required MotionType motionType,
   });
 
   /// 暂停当前运动会话。
@@ -74,11 +76,14 @@ class MethodChannelMotionService implements MotionService {
   @override
   Future<MotionCommandResult> startWorkout({
     required String sessionId,
+    required MotionType motionType,
   }) async {
     final response = await _invokeMapMethod(
       MotionChannelMethods.startWorkout,
       arguments: {
         'sessionId': sessionId,
+        // 将 MotionType 转为原生能识别的字符串。
+        'motionType': motionType.channelValue,
       },
     );
     return MotionCommandResult.fromMap(response);

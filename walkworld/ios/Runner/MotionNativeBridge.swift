@@ -11,19 +11,57 @@ import Foundation
 /// 3. 持续定位监听、轨迹过滤与实时事件推送
 /// 4. 为 Flutter 侧提供可用的运动统计与基础错误处理
 final class MotionNativeBridge: NSObject, FlutterStreamHandler {
-  private enum MotionRuntimeConfig {
-    /// 超过这个水平精度的定位点直接丢弃，避免明显漂移污染轨迹。
-    static let maxAcceptedHorizontalAccuracy: CLLocationAccuracy = 65
+  /// 按运动类型差异化的定位过滤参数包。
+  struct MotionFilterConfig {
+    /// 水平精度容忍上限（米），超过则认为是飘移点直接丢弃。
+    let maxAcceptedHorizontalAccuracy: CLLocationAccuracy
+    /// 最小有效移动距离（米），低于此值视为原地抖动丢弃。
+    let minMovementDistanceMeters: Double
+    /// 跳点速度阈值（m/s），推算速度超过此值则判定为 GPS 跳点。
+    let maxAcceptedDerivedSpeedMps: Double
+    /// 跳点检测最小时间间隔（秒），间隔太短不做跳点判定。
+    let minIntervalForJumpDetectionSeconds: TimeInterval
+    /// 方向角检测时间窗口（秒）。
+    let directionCheckWindowSeconds: TimeInterval
+    /// 方向角突变阈值（度），超过此值且速度低于阈值时判定为漂移。
+    let maxDirectionChangeForSlowMoveDegrees: Double
+    /// "低速"判定阈值（m/s），低于此速度时方向角突变才触发漂移过滤。
+    let slowMoveSpeedThresholdMps: Double
 
-    /// 有效速度样本保留最近 5 个，用于做简单平滑。
-    static let smoothedSpeedSampleWindow = 5
+    /// 徒步参数组：精度要求最高，速度慢，对毛刺最敏感。
+    static let hiking = MotionFilterConfig(
+      maxAcceptedHorizontalAccuracy: 12,
+      minMovementDistanceMeters: 1.5,
+      maxAcceptedDerivedSpeedMps: 6,
+      minIntervalForJumpDetectionSeconds: 0.5,
+      directionCheckWindowSeconds: 3.0,
+      maxDirectionChangeForSlowMoveDegrees: 120,
+      slowMoveSpeedThresholdMps: 1.5
+    )
 
-    /// 当两点推导出的速度超过这个阈值时，判定为跳点。
-    static let maxAcceptedDerivedSpeedMps: Double = 10
+    /// 跑步参数组：速度比徒步快，最小距离略放宽，跳点阈值稍提高。
+    static let running = MotionFilterConfig(
+      maxAcceptedHorizontalAccuracy: 12,
+      minMovementDistanceMeters: 2.0,
+      maxAcceptedDerivedSpeedMps: 8,
+      minIntervalForJumpDetectionSeconds: 0.5,
+      directionCheckWindowSeconds: 3.0,
+      maxDirectionChangeForSlowMoveDegrees: 120,
+      slowMoveSpeedThresholdMps: 2.0
+    )
 
-    /// 两点时间间隔太短时，不参与跳点判定，避免时钟抖动带来的误杀。
-    static let minIntervalForJumpDetectionSeconds: TimeInterval = 1
+    /// 骑行参数组：速度最快，精度容忍最宽，跳点和方向角阈值均放大。
+    static let cycling = MotionFilterConfig(
+      maxAcceptedHorizontalAccuracy: 20,
+      minMovementDistanceMeters: 3.0,
+      maxAcceptedDerivedSpeedMps: 14,
+      minIntervalForJumpDetectionSeconds: 0.5,
+      directionCheckWindowSeconds: 2.0,
+      maxDirectionChangeForSlowMoveDegrees: 150,
+      slowMoveSpeedThresholdMps: 5.0
+    )
   }
+
 
   private enum MotionMethod {
     static let requestLocationPermission = "requestLocationPermission"
@@ -71,6 +109,12 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   private var recordedLocations: [CLLocation] = []
   private var recentSpeedSamples: [Double] = []
   private var realtimeTicker: Timer?
+  /// 速度平滑窗口大小，保留最近 N 个速度样本做平均。
+  private let smoothedSpeedSampleWindow = 5
+  /// 当前运动类型对应的过滤参数包，开始运动时根据 motionType 写入。
+  private var filterConfig: MotionFilterConfig = .hiking
+  /// 用于方向角突变检测的短时间窗口内的最近几个点（最多保留 3 个）。
+  private var recentDirectionCheckPoints: [CLLocation] = []
 
   init(messenger: FlutterBinaryMessenger) {
     self.methodChannel = FlutterMethodChannel(
@@ -199,6 +243,10 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
       )
       return
     }
+
+    // 根据运动类型加载对应的过滤参数包，未传或未识别时默认徒步。
+    let motionTypeValue = payload["motionType"] as? String ?? "hiking"
+    filterConfig = resolveFilterConfig(motionTypeValue)
 
     resetWorkoutState()
     currentSessionId = sessionId
@@ -344,11 +392,26 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
       return
     }
 
+    // 第一关：水平精度过滤，精度太差的点直接丢弃。
     guard isLocationAccuracyAcceptable(location) else {
       return
     }
 
+    // 第二关：大跳点过滤，推算速度超过阈值则认为是 GPS 跳点。
     guard !isJumpLocation(location) else {
+      return
+    }
+
+    // 第三关：最小移动距离门限，过滤原地抖动产生的毛刺。
+    if let lastLocation = recordedLocations.last {
+      let distance = location.distance(from: lastLocation)
+      guard distance >= filterConfig.minMovementDistanceMeters else {
+        return
+      }
+    }
+
+    // 第四关：方向角一致性检测，过滤短时间内方向突变的连续飘移点。
+    guard !isDirectionAnomalyLocation(location) else {
       return
     }
 
@@ -357,6 +420,8 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     }
 
     recordedLocations.append(location)
+    // 同步更新方向角检测窗口。
+    updateDirectionCheckWindow(location)
     appendSpeedSampleIfNeeded(from: location)
 
     let locationPayload = buildLocationPayload(location)
@@ -508,7 +573,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
       return false
     }
 
-    return horizontalAccuracy <= MotionRuntimeConfig.maxAcceptedHorizontalAccuracy
+    return horizontalAccuracy <= filterConfig.maxAcceptedHorizontalAccuracy
   }
 
   private func isJumpLocation(_ location: CLLocation) -> Bool {
@@ -517,13 +582,98 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     }
 
     let intervalSeconds = location.timestamp.timeIntervalSince(lastLocation.timestamp)
-    guard intervalSeconds >= MotionRuntimeConfig.minIntervalForJumpDetectionSeconds else {
+    guard intervalSeconds >= filterConfig.minIntervalForJumpDetectionSeconds else {
+      // 时间间隔过短，不做跳点判定，直接放行让后续过滤处理。
       return false
     }
 
     let distanceMeters = location.distance(from: lastLocation)
     let derivedSpeedMps = distanceMeters / intervalSeconds
-    return derivedSpeedMps > MotionRuntimeConfig.maxAcceptedDerivedSpeedMps
+    return derivedSpeedMps > filterConfig.maxAcceptedDerivedSpeedMps
+  }
+
+  /// 方向角一致性检测：在短时间窗口内若方向角变化过大且速度偏低，判定为漂移点。
+  ///
+  /// GPS 漂移的典型表现是：在很短时间内，连续几个点的方向从 A 方向跳到 B 方向，
+  /// 再跳回 A 方向（或其他方向），形成"Z"字或"锯齿"轨迹。
+  /// 真实转弯通常速度较高且方向变化持续，不会在 2-3 秒内突变再突变。
+  private func isDirectionAnomalyLocation(_ location: CLLocation) -> Bool {
+    // 至少需要 2 个已记录点才能做方向角判定。
+    guard recentDirectionCheckPoints.count >= 2 else {
+      return false
+    }
+
+    // 只在低速移动时才做方向角过滤（高速转弯是正常行为）。
+    let currentSpeed = location.speed >= 0 ? location.speed : 0
+    guard currentSpeed < filterConfig.slowMoveSpeedThresholdMps else {
+      return false
+    }
+
+    // 取窗口内最早的点和最近的点，计算从「最近已采纳点 → 窗口首点」的方向角，
+    // 再计算「最近已采纳点 → 当前候选点」的方向角，判断偏转是否过大。
+    let windowStart = recentDirectionCheckPoints.first!
+    let windowEnd = recentDirectionCheckPoints.last!
+
+    // 确保窗口时间范围在配置范围内。
+    let windowInterval = windowEnd.timestamp.timeIntervalSince(windowStart.timestamp)
+    guard windowInterval > 0, windowInterval <= filterConfig.directionCheckWindowSeconds else {
+      return false
+    }
+
+    // 计算窗口内已有轨迹的整体方向角。
+    let baselineBearing = bearing(from: windowStart.coordinate, to: windowEnd.coordinate)
+    // 计算从窗口末点到当前候选点的方向角。
+    let candidateBearing = bearing(from: windowEnd.coordinate, to: location.coordinate)
+
+    let angleDiff = abs(angleDifference(from: baselineBearing, to: candidateBearing))
+    return angleDiff > filterConfig.maxDirectionChangeForSlowMoveDegrees
+  }
+
+  /// 维护方向角检测用的短时窗口（最多保留最近 3 个点）。
+  private func updateDirectionCheckWindow(_ location: CLLocation) {
+    recentDirectionCheckPoints.append(location)
+
+    // 清理时间窗口外的旧点。
+    let cutoff = location.timestamp.addingTimeInterval(-filterConfig.directionCheckWindowSeconds)
+    recentDirectionCheckPoints.removeAll { $0.timestamp < cutoff }
+
+    // 最多保留 3 个点，避免窗口无限增长。
+    if recentDirectionCheckPoints.count > 3 {
+      recentDirectionCheckPoints.removeFirst(recentDirectionCheckPoints.count - 3)
+    }
+  }
+
+  /// 计算从坐标 A 到坐标 B 的方位角（度，0-360，正北为 0）。
+  private func bearing(
+    from start: CLLocationCoordinate2D,
+    to end: CLLocationCoordinate2D
+  ) -> Double {
+    let startLat = start.latitude * .pi / 180
+    let startLon = start.longitude * .pi / 180
+    let endLat = end.latitude * .pi / 180
+    let endLon = end.longitude * .pi / 180
+    let dLon = endLon - startLon
+    let x = sin(dLon) * cos(endLat)
+    let y = cos(startLat) * sin(endLat) - sin(startLat) * cos(endLat) * cos(dLon)
+    let bearing = atan2(x, y) * 180 / .pi
+    return (bearing + 360).truncatingRemainder(dividingBy: 360)
+  }
+
+  /// 计算两个方位角之间的最短差值（返回 -180 到 180 之间）。
+  private func angleDifference(from angle1: Double, to angle2: Double) -> Double {
+    var diff = angle2 - angle1
+    while diff > 180 { diff -= 360 }
+    while diff < -180 { diff += 360 }
+    return diff
+  }
+
+  /// 将 Flutter 侧传来的运动类型字符串映射为对应的过滤参数包。
+  private func resolveFilterConfig(_ motionType: String) -> MotionFilterConfig {
+    switch motionType {
+    case "running": return .running
+    case "cycling": return .cycling
+    default: return .hiking
+    }
   }
 
   private func appendSpeedSampleIfNeeded(from location: CLLocation) {
@@ -532,8 +682,8 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     }
 
     recentSpeedSamples.append(speedMps)
-    if recentSpeedSamples.count > MotionRuntimeConfig.smoothedSpeedSampleWindow {
-      recentSpeedSamples.removeFirst(recentSpeedSamples.count - MotionRuntimeConfig.smoothedSpeedSampleWindow)
+    if recentSpeedSamples.count > smoothedSpeedSampleWindow {
+      recentSpeedSamples.removeFirst(recentSpeedSamples.count - smoothedSpeedSampleWindow)
     }
   }
 
@@ -618,6 +768,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     totalDistanceMeters = 0
     recentSpeedSamples.removeAll()
     recordedLocations.removeAll()
+    recentDirectionCheckPoints.removeAll()
   }
 
   /// 运行中每秒补发一次统计，让 Flutter 的时长与均速不依赖新定位点才能刷新。

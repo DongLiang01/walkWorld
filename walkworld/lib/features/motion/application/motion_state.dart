@@ -1,5 +1,6 @@
 import '../models/models.dart';
 import '../services/motion_channel_protocol.dart';
+import '../presentation/widgets/motion_type_sheet.dart';
 
 /// 用于标记 `copyWith` 中“调用方没有传这个字段”的哨兵值。
 const _unset = Object();
@@ -20,6 +21,7 @@ class MotionState {
     this.sessionStartTime,
     this.locationServiceEnabled,
     this.isEventListening = false,
+    this.motionType,
   });
 
   /// 当前运动状态，是页面渲染和交互的核心依据。
@@ -57,6 +59,12 @@ class MotionState {
   /// 这个字段主要用于调试和排查初始化问题。
   final bool isEventListening;
 
+  /// 本次运动选择的运动类型。
+  ///
+  /// 在 `startWorkout` 时写入，用于原生侧差异化定位过滤参数。
+  /// 未开始运动时为 `null`。
+  final MotionType? motionType;
+
   /// 默认初始状态。
   factory MotionState.initial() {
     return const MotionState(
@@ -82,6 +90,7 @@ class MotionState {
     Object? sessionStartTime = _unset,
     Object? locationServiceEnabled = _unset,
     bool? isEventListening,
+    Object? motionType = _unset,
   }) {
     return MotionState(
       status: status ?? this.status,
@@ -105,6 +114,9 @@ class MotionState {
           ? this.locationServiceEnabled
           : locationServiceEnabled as bool?,
       isEventListening: isEventListening ?? this.isEventListening,
+      motionType: identical(motionType, _unset)
+          ? this.motionType
+          : motionType as MotionType?,
     );
   }
 }

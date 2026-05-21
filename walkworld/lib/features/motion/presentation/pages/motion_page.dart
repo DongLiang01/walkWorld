@@ -159,8 +159,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
 
     _selectedMotionType = selectedType;
     _lastPresentedErrorKey = null;
-    // 当前 startWorkout 暂不接受类型参数，后续可扩展
-    await controller.startWorkout();
+    await controller.startWorkout(motionType: selectedType);
   }
 
   void _handleMotionStateChanged(MotionState? previous, MotionState next) {

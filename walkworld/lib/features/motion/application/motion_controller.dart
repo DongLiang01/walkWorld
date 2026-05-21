@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/models.dart';
+import '../presentation/widgets/motion_type_sheet.dart';
 import '../services/services.dart';
 import 'motion_service_provider.dart';
 import 'motion_state.dart';
@@ -67,7 +68,8 @@ class MotionController extends Notifier<MotionState> {
   /// 开始一次新的运动。
   ///
   /// 开始前会先把状态切到 `preparing`，等原生接受命令后再进入 `running`。
-  Future<void> startWorkout() async {
+  /// [motionType] 会一并下传到原生侧，用于切换对应运动类型的过滤参数组。
+  Future<void> startWorkout({required MotionType motionType}) async {
     if (state.status == MotionStatus.running ||
         state.status == MotionStatus.preparing) {
       return;
@@ -88,10 +90,14 @@ class MotionController extends Notifier<MotionState> {
       ),
       finishedSession: null,
       error: null,
+      motionType: motionType,
     );
 
     try {
-      final result = await _motionService.startWorkout(sessionId: sessionId);
+      final result = await _motionService.startWorkout(
+        sessionId: sessionId,
+        motionType: motionType,
+      );
 
       if (!result.accepted) {
         _setError(code: 'start_workout_rejected', message: '原生未接受开始运动命令。');
@@ -274,10 +280,8 @@ class MotionController extends Notifier<MotionState> {
           realtime: realtime,
           error: null,
         );
-
-        if (realtime.latestPoint != null) {
-          _appendRecordedPoint(realtime.latestPoint!);
-        }
+        // 注意：轨迹点入列统一只走 locationUpdated 事件，
+        // 此处不再对 latestPoint 二次追加，避免双路径导致点顺序混乱。
         break;
       case MotionChannelEventType.trackRestored:
         // App 从后台返回后，原生侧把 recordedLocations 全量推过来。

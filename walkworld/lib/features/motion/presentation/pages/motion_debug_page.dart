@@ -5,6 +5,7 @@ import '../../application/application.dart';
 import '../../models/models.dart';
 import '../../models/motion_status.dart';
 import '../widgets/motion_map_view.dart';
+import '../widgets/motion_type_sheet.dart';
 
 /// 运动模块的调试页面入口。
 ///
@@ -90,7 +91,11 @@ class _MotionDebugPageState extends ConsumerState<MotionDebugPage> {
                         child: const Text('请求权限'),
                       ),
                       FilledButton(
-                        onPressed: canStart ? controller.startWorkout : null,
+                        onPressed: canStart
+                            ? () => controller.startWorkout(
+                                motionType: MotionType.hiking,
+                              )
+                            : null,
                         child: const Text('开始'),
                       ),
                       OutlinedButton(
@@ -112,12 +117,16 @@ class _MotionDebugPageState extends ConsumerState<MotionDebugPage> {
                         ),
                       if (motionState.status == MotionStatus.finished)
                         TextButton(
-                          onPressed: controller.startWorkout,
+                          onPressed: () => controller.startWorkout(
+                            motionType: MotionType.hiking,
+                          ),
                           child: const Text('再来一次'),
                         ),
                       if (motionState.status == MotionStatus.error && canStart)
                         TextButton(
-                          onPressed: controller.startWorkout,
+                          onPressed: () => controller.startWorkout(
+                            motionType: MotionType.hiking,
+                          ),
                           child: const Text('重新开始'),
                         ),
                       if (motionState.status == MotionStatus.paused)

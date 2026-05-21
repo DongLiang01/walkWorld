@@ -35,6 +35,13 @@ extension MotionTypeExt on MotionType {
     MotionType.cycling => 'assets/icons/motion/motion_type_cycling.svg',
   };
 
+  /// 传给原生侧的标准字符串，用于切换差异化定位过滤参数组。
+  String get channelValue => switch (this) {
+    MotionType.hiking => 'hiking',
+    MotionType.running => 'running',
+    MotionType.cycling => 'cycling',
+  };
+
   Color getIconBg(AppThemeTokens tokens) => switch (this) {
     MotionType.hiking => tokens.motionTypeHikingBg,
     MotionType.running =>
