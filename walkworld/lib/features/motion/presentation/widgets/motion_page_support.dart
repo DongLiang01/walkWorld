@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_theme_tokens.dart';
+import '../../models/motion_realtime.dart';
 
 /// 正式页面当前使用的运动模块视觉 token。
 ///
@@ -144,20 +145,36 @@ String formatMotionDuration(int seconds) {
       '${remainSeconds.toString().padLeft(2, '0')}';
 }
 
-/// 统一格式化配速显示。
-String formatMotionPace(double? metersPerSecond) {
+/// 统一格式化速度显示，单位 km/h，保留两位小数。
+String formatMotionSpeed(double? metersPerSecond) {
   if (metersPerSecond == null || metersPerSecond <= 0) {
-    return "--'--";
+    return '0.00';
   }
-  // 配速：分钟/公里 = 1000 / (米/秒 * 60)
-  final double minutesPerKm = 1000 / (metersPerSecond * 60);
-  int minutes = minutesPerKm.floor();
-  int seconds = ((minutesPerKm - minutes) * 60).round();
-  if (seconds == 60) {
-    minutes += 1;
-    seconds = 0;
+
+  // 速度：km/h = m/s * 3.6
+  final speedKmh = metersPerSecond * 3.6;
+  return speedKmh.toStringAsFixed(2);
+}
+
+/// 统一计算实时面板展示速度。
+///
+/// 运动刚开始的前几秒，定位点数量少、瞬时速度噪声大，因此这里增加
+/// 最小时长与最小距离门槛；达标后再展示当前速度，避免起步阶段出现误导值。
+String formatRealtimeMotionSpeed(
+  MotionRealtime? realtime, {
+  int minDurationSeconds = 15,
+  double minDistanceMeters = 10,
+}) {
+  if (realtime == null) {
+    return '0.00';
   }
-  return '$minutes\'${seconds.toString().padLeft(2, '0')}';
+
+  if (realtime.durationSeconds < minDurationSeconds ||
+      realtime.distanceMeters < minDistanceMeters) {
+    return '0.00';
+  }
+
+  return formatMotionSpeed(realtime.currentSpeedMps);
 }
 
 class GlassCapsule extends StatelessWidget {

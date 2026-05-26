@@ -42,7 +42,7 @@ class MotionFinishSheet extends ConsumerWidget {
                     0) /
                 1000)
             .toStringAsFixed(2);
-    final currentPace = formatMotionPace(
+    final currentSpeed = formatMotionSpeed(
       finishedSession?.averageSpeedMps ??
           realtime?.averageSpeedMps ??
           realtime?.currentSpeedMps,
@@ -188,9 +188,9 @@ class MotionFinishSheet extends ConsumerWidget {
                       _MetricDivider(color: appTokens.dividerPrimary),
                       Expanded(
                         child: _MetricCell(
-                          value: currentPace,
-                          unit: '/km',
-                          label: '配速',
+                          value: currentSpeed,
+                          unit: 'km/h',
+                          label: '速度',
                           appTokens: appTokens,
                         ),
                       ),

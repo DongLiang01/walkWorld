@@ -45,9 +45,7 @@ class RunningActionSheet extends ConsumerWidget {
     final distanceKm = ((realtime?.distanceMeters ?? 0) / 1000).toStringAsFixed(
       2,
     );
-    final currentPace = formatMotionPace(
-      realtime?.currentSpeedMps ?? realtime?.averageSpeedMps,
-    );
+    final currentSpeed = formatRealtimeMotionSpeed(realtime);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -87,7 +85,7 @@ class RunningActionSheet extends ConsumerWidget {
             _MetricsRow(
               distanceKm: distanceKm,
               durationFormat: durationFormat,
-              currentPace: currentPace,
+              currentSpeed: currentSpeed,
               pageTokens: pageTokens,
             ),
             const SizedBox(height: 24),
@@ -164,18 +162,18 @@ class _StatusRow extends StatelessWidget {
   }
 }
 
-/// 数据统计行：距离 / 时长 / 配速，分隔线随内容自适应高度。
+/// 数据统计行：距离 / 时长 / 速度，分隔线随内容自适应高度。
 class _MetricsRow extends StatelessWidget {
   const _MetricsRow({
     required this.distanceKm,
     required this.durationFormat,
-    required this.currentPace,
+    required this.currentSpeed,
     required this.pageTokens,
   });
 
   final String distanceKm;
   final String durationFormat;
-  final String currentPace;
+  final String currentSpeed;
   final MotionPageTokens pageTokens;
 
   Widget _divider() =>
@@ -210,9 +208,9 @@ class _MetricsRow extends StatelessWidget {
             _divider(),
             Expanded(
               child: _MetricCell(
-                value: currentPace,
-                unit: '/km',
-                label: '配速',
+                value: currentSpeed,
+                unit: 'km/h',
+                label: '速度',
                 pageTokens: pageTokens,
               ),
             ),
