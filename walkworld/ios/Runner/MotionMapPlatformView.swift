@@ -24,9 +24,9 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
 
   private enum MapAnnotationConfig {
     /// 轨迹末端当前位置点外圈直径。
-    static let outerDotSize = CGSize(width: 24, height: 24)
+    static let outerDotSize = CGSize(width: 36, height: 36)
     /// 轨迹末端当前位置点内圈直径。
-    static let innerDotSize = CGSize(width: 12, height: 12)
+    static let innerDotSize = CGSize(width: 24, height: 24)
     /// 轨迹末端当前位置点复用标识。
     static let trackDotReuseIdentifier = "motion_track_dot"
   }
@@ -194,6 +194,23 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
       mapView.showsUserLocation = shouldShowSystemUserLocation
       mapView.userTrackingMode = .none
     }
+
+    if !shouldShowSystemUserLocation,
+       shouldPreviewLiveLocation(),
+       let userLocation = mapView.userLocation,
+       CLLocationCoordinate2DIsValid(userLocation.coordinate) {
+      updateTrackAnnotation(coordinate: userLocation.coordinate)
+    }
+  }
+
+  /// 运动中如果还没有形成有效轨迹，就让自绘蓝点先跟随当前位置，避免起步前丢失位置感知。
+  private func shouldPreviewLiveLocation() -> Bool {
+    switch sessionStatus {
+    case .preparing, .running, .paused:
+      return nativeTrackCoordinates.isEmpty
+    case .idle, .finished, .error:
+      return false
+    }
   }
 
   /// 原生定位采到新点时，直接追加到地图轨迹，无需 Flutter 中转。
@@ -318,8 +335,15 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   func mapView(_ mapView: MAMapView!, didUpdate userLocation: MAUserLocation!, updatingLocation: Bool) {
     guard updatingLocation,
           let userLocation,
-          CLLocationCoordinate2DIsValid(userLocation.coordinate),
-          !hasCenteredOnUserLocation else {
+          CLLocationCoordinate2DIsValid(userLocation.coordinate) else {
+      return
+    }
+
+    if shouldPreviewLiveLocation() {
+      updateTrackAnnotation(coordinate: userLocation.coordinate)
+    }
+
+    guard !hasCenteredOnUserLocation else {
       return
     }
 
