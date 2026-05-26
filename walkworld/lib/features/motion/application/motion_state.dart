@@ -13,14 +13,12 @@ class MotionState {
   const MotionState({
     required this.status,
     required this.permissionStatus,
-    required this.recordedPoints,
     this.realtime,
     this.finishedSession,
     this.error,
     this.currentSessionId,
     this.sessionStartTime,
     this.locationServiceEnabled,
-    this.isEventListening = false,
     this.motionType,
   });
 
@@ -29,12 +27,6 @@ class MotionState {
 
   /// 当前定位权限状态。
   final MotionPermissionStatus permissionStatus;
-
-  /// 当前这次运动已经采集并保留的轨迹点。
-  ///
-  /// 这里保存的是 Flutter 侧认可的点集，后续页面画线和结束生成记录
-  /// 都可以直接依赖这份数据。
-  final List<MotionPoint> recordedPoints;
 
   /// 原生侧推送的实时统计结果。
   final MotionRealtime? realtime;
@@ -54,11 +46,6 @@ class MotionState {
   /// 系统级定位服务是否开启。
   final bool? locationServiceEnabled;
 
-  /// 是否已经建立对原生事件流的监听。
-  ///
-  /// 这个字段主要用于调试和排查初始化问题。
-  final bool isEventListening;
-
   /// 本次运动选择的运动类型。
   ///
   /// 在 `startWorkout` 时写入，用于原生侧差异化定位过滤参数。
@@ -70,7 +57,6 @@ class MotionState {
     return const MotionState(
       status: MotionStatus.idle,
       permissionStatus: MotionPermissionStatus.notDetermined,
-      recordedPoints: [],
     );
   }
 
@@ -82,28 +68,24 @@ class MotionState {
   MotionState copyWith({
     MotionStatus? status,
     MotionPermissionStatus? permissionStatus,
-    List<MotionPoint>? recordedPoints,
     Object? realtime = _unset,
     Object? finishedSession = _unset,
     Object? error = _unset,
     Object? currentSessionId = _unset,
     Object? sessionStartTime = _unset,
     Object? locationServiceEnabled = _unset,
-    bool? isEventListening,
     Object? motionType = _unset,
   }) {
     return MotionState(
       status: status ?? this.status,
       permissionStatus: permissionStatus ?? this.permissionStatus,
-      recordedPoints: recordedPoints ?? this.recordedPoints,
       realtime: identical(realtime, _unset)
           ? this.realtime
           : realtime as MotionRealtime?,
       finishedSession: identical(finishedSession, _unset)
           ? this.finishedSession
           : finishedSession as MotionSession?,
-      error:
-          identical(error, _unset) ? this.error : error as MotionError?,
+      error: identical(error, _unset) ? this.error : error as MotionError?,
       currentSessionId: identical(currentSessionId, _unset)
           ? this.currentSessionId
           : currentSessionId as String?,
@@ -113,7 +95,6 @@ class MotionState {
       locationServiceEnabled: identical(locationServiceEnabled, _unset)
           ? this.locationServiceEnabled
           : locationServiceEnabled as bool?,
-      isEventListening: isEventListening ?? this.isEventListening,
       motionType: identical(motionType, _unset)
           ? this.motionType
           : motionType as MotionType?,

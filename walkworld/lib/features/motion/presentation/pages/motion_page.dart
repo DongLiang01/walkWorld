@@ -15,10 +15,10 @@ import '../widgets/motion_type_sheet.dart';
 
 /// 运动模块正式页面入口。
 ///
-/// 当前先按 Figma 落地“开始运动前”日间/夜间正式页面骨架：
+/// 当前按 Figma 落地“开始运动前/运动中/运动结束”的正式页骨架：
 /// 1. 保持地图层、底部主操作区和底部导航的空间关系稳定
-/// 2. 将调试页职责从正式页中拆出，避免视觉实现继续被联调字段污染
-/// 3. 为后续接入“运动类型选择、运动中、运动结束”设计稿保留结构边界
+/// 2. 地图相关职责全部留在原生侧，Flutter 只消费正式页展示所需状态
+/// 3. 为后续接入运动记录保存能力保留结束态数据边界
 class MotionPage extends ConsumerStatefulWidget {
   const MotionPage({super.key});
 
@@ -53,11 +53,6 @@ class _MotionPageState extends ConsumerState<MotionPage> {
     final theme = Theme.of(context);
     final appTokens = theme.extension<AppThemeTokens>()!;
     final pageTokens = MotionPageTokens.fromTheme(appTokens, theme.brightness);
-    final latestPoint =
-        motionState.realtime?.latestPoint ??
-        (motionState.recordedPoints.isNotEmpty
-            ? motionState.recordedPoints.last
-            : null);
     final canStart =
         motionState.status == MotionStatus.idle ||
         motionState.status == MotionStatus.finished ||
@@ -84,7 +79,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                   'sessionStatus': motionState.status.value,
                 },
                 workoutStartResetToken: motionState.currentSessionId,
-                currentPoint: latestPoint,
+                sessionStatus: motionState.status,
               ),
             ),
           ),

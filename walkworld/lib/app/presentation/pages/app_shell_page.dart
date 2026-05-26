@@ -8,11 +8,11 @@ import '../../../features/profile/presentation/pages/profile_page.dart';
 
 /// 应用根壳页面。
 ///
-/// 当前正式页与调试页职责已经拆开：
+/// 当前仅保留正式页入口：
 /// 1. 提供接近设计稿语义的底部三栏导航
 /// 2. “运动”模块挂正式 `MotionPage`
 /// 3. 首页、运动页、“我的”页都走当前正式入口
-/// 4. 底部导航只负责页面切换，不再承载调试或占位页面分流
+/// 4. 底部导航只负责页面切换，不承载调试或占位页面分流
 class AppShellPage extends StatefulWidget {
   const AppShellPage({super.key});
 

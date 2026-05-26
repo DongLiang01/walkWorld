@@ -25,11 +25,8 @@ final class MotionChannelMethods {
 enum MotionChannelEventType {
   permissionChanged('permissionChanged'),
   statusChanged('statusChanged'),
-  locationUpdated('locationUpdated'),
   motionUpdated('motionUpdated'),
-  error('error'),
-  /// App 从后台恢复后，原生侧批量推送完整历史轨迹，用于补齐后台期间丢失的点位。
-  trackRestored('trackRestored');
+  error('error');
 
   const MotionChannelEventType(this.value);
 

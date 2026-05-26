@@ -31,18 +31,18 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
 
     /// 徒步参数组：精度要求最高，速度慢，对毛刺最敏感。
     static let hiking = MotionFilterConfig(
-      maxAcceptedHorizontalAccuracy: 12,
-      minMovementDistanceMeters: 1.5,
+      maxAcceptedHorizontalAccuracy: 15,
+      minMovementDistanceMeters: 1.2,
       maxAcceptedDerivedSpeedMps: 6,
       minIntervalForJumpDetectionSeconds: 0.5,
       directionCheckWindowSeconds: 3.0,
-      maxDirectionChangeForSlowMoveDegrees: 145,
-      slowMoveSpeedThresholdMps: 0.8
+      maxDirectionChangeForSlowMoveDegrees: 150,
+      slowMoveSpeedThresholdMps: 1.5
     )
 
     /// 跑步参数组：速度比徒步快，最小距离略放宽，跳点阈值稍提高。
     static let running = MotionFilterConfig(
-      maxAcceptedHorizontalAccuracy: 12,
+      maxAcceptedHorizontalAccuracy: 17,
       minMovementDistanceMeters: 2.0,
       maxAcceptedDerivedSpeedMps: 8,
       minIntervalForJumpDetectionSeconds: 0.5,
@@ -76,11 +76,8 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   private enum MotionEvent {
     static let permissionChanged = "permissionChanged"
     static let statusChanged = "statusChanged"
-    static let locationUpdated = "locationUpdated"
     static let motionUpdated = "motionUpdated"
     static let error = "error"
-    /// App 从后台返回或 EventChannel 重建时，将完整历史轨迹批量推送给 Flutter。
-    static let trackRestored = "trackRestored"
   }
 
   private enum MotionStatusValue {
@@ -119,6 +116,16 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
   private var recentDirectionCheckPoints: [CLLocation] = []
   /// 后台期间若仍有新轨迹点入列，则在回前台时补一次全量恢复。
   private var needsTrackRestoreOnBecomeActive = false
+
+  func attachMapView(_ mapView: MotionMapPlatformView) {
+    self.mapView = mapView
+  }
+
+  func detachMapView(_ mapView: MotionMapPlatformView) {
+    if self.mapView === mapView {
+      self.mapView = nil
+    }
+  }
 
   init(messenger: FlutterBinaryMessenger) {
     self.methodChannel = FlutterMethodChannel(
@@ -443,8 +450,6 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
       needsTrackRestoreOnBecomeActive = true
     }
 
-    let locationPayload = buildLocationPayload(location)
-    pushEvent(name: MotionEvent.locationUpdated, payload: locationPayload)
     pushMotionUpdatedEvent(latestLocation: location)
   }
 
@@ -466,14 +471,6 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     // 回到前台后，用原生完整轨迹重绘地图，补齐后台期间丢失的线段。
     mapView?.restoreTrack(recordedLocations)
 
-    if !recordedLocations.isEmpty, eventSink != nil {
-      let allPoints = recordedLocations.map(buildLocationPayload)
-      pushEvent(
-        name: MotionEvent.trackRestored,
-        payload: ["points": allPoints]
-      )
-    }
-
     if currentStatus == MotionStatusValue.running {
       startRealtimeTickerIfNeeded()
     }
@@ -493,7 +490,6 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     referenceTimeMillis: Int64? = nil
   ) {
     let resolvedTimeMillis = referenceTimeMillis ?? currentTimestampMillis()
-    let latestPointPayload = latestLocation.map(buildLocationPayload)
 
     pushEvent(
       name: MotionEvent.motionUpdated,
@@ -504,9 +500,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
         "currentSpeedMps": buildSmoothedCurrentSpeed(
           fallbackLocation: latestLocation ?? recordedLocations.last
         ),
-        "averageSpeedMps": buildAverageSpeed(referenceTimeMillis: resolvedTimeMillis),
-        "pointCount": recordedLocations.count,
-        "latestPoint": latestPointPayload
+        "averageSpeedMps": buildAverageSpeed(referenceTimeMillis: resolvedTimeMillis)
       ])
     )
   }
@@ -866,19 +860,6 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
 
     if currentStatus != MotionStatusValue.idle {
       pushMotionUpdatedEvent()
-    }
-
-    // App 从后台恢复或 EventChannel 重建时，把原生侧已缓存的完整轨迹批量推给 Flutter。
-    // Flutter 侧在后台期间无法接收事件，recordedPoints 会丢失中间点位；
-    // 这里用 trackRestored 一次性补齐，避免地图出现"起终点直线"的错误轨迹。
-    if (currentStatus == MotionStatusValue.running ||
-        currentStatus == MotionStatusValue.paused) &&
-        !recordedLocations.isEmpty {
-      let allPoints = recordedLocations.map(buildLocationPayload)
-      pushEvent(
-        name: MotionEvent.trackRestored,
-        payload: ["points": allPoints]
-      )
     }
 
     if currentStatus == MotionStatusValue.running {

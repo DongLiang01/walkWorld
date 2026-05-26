@@ -21,9 +21,9 @@ final class MotionMapViewFactory: NSObject, FlutterPlatformViewFactory {
       frame: frame,
       viewIdentifier: viewId,
       arguments: args,
-      messenger: messenger
+      messenger: messenger,
+      bridge: bridge
     )
-    bridge.mapView = view
     return view
   }
 

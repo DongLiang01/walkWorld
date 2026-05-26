@@ -2,22 +2,22 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../models/models.dart';
+import '../../models/motion_status.dart';
 
 /// Flutter 侧运动地图容器。
 ///
 /// 这个组件负责两件事：
 /// 1. 承载 iOS 原生 `PlatformView`
-/// 2. 把 Flutter 当前持有的位置点和运动开始重置信号同步给原生地图
+/// 2. 在开始新一轮运动时通知原生地图重置相机
 ///
-/// 原生地图一旦创建成功，后续的当前位置刷新和开始运动时的相机重置
-/// 都通过当前 viewId 对应的专属 MethodChannel 完成。
+/// 运行中的蓝点、轨迹线和轨迹恢复全部留在原生侧处理；
+/// Flutter 正式页不再参与地图点位和画线同步。
 class MotionMapView extends StatefulWidget {
   const MotionMapView({
     super.key,
     this.creationParams,
     this.workoutStartResetToken,
-    this.currentPoint,
+    required this.sessionStatus,
   });
 
   /// 创建原生地图视图时传给 iOS 侧的初始化参数。
@@ -28,8 +28,8 @@ class MotionMapView extends StatefulWidget {
   /// 当前使用 sessionId 作为 token，只要值变化，就要求原生地图重置相机。
   final String? workoutStartResetToken;
 
-  /// 当前最新位置点。
-  final MotionPoint? currentPoint;
+  /// 当前运动状态，用于同步原生地图展示策略。
+  final MotionStatus sessionStatus;
 
   static const String viewType = 'walkworld/motion_map_view';
 
@@ -48,20 +48,16 @@ class _MotionMapViewState extends State<MotionMapView> {
       return;
     }
 
-    final pointChanged =
-        oldWidget.currentPoint?.timestamp != widget.currentPoint?.timestamp;
     final workoutStartResetChanged =
         oldWidget.workoutStartResetToken != widget.workoutStartResetToken &&
         widget.workoutStartResetToken != null;
 
     if (workoutStartResetChanged) {
-      _nativeController!.resetCameraForWorkoutStart(
-        focusPoint: widget.currentPoint,
-      );
+      _nativeController!.resetCameraForWorkoutStart();
     }
 
-    if (pointChanged && widget.currentPoint != null) {
-      _nativeController!.updateUserLocation(widget.currentPoint!);
+    if (oldWidget.sessionStatus != widget.sessionStatus) {
+      _nativeController!.syncSessionStatus(widget.sessionStatus.value);
     }
   }
 
@@ -85,10 +81,7 @@ class _MotionMapViewState extends State<MotionMapView> {
   Future<void> _handlePlatformViewCreated(int viewId) async {
     final controller = MotionMapNativeController(viewId: viewId);
     _nativeController = controller;
-
-    if (widget.currentPoint != null) {
-      await controller.updateUserLocation(widget.currentPoint!);
-    }
+    await controller.syncSessionStatus(widget.sessionStatus.value);
   }
 }
 
@@ -102,28 +95,15 @@ class MotionMapNativeController {
 
   final MethodChannel _channel;
 
-  /// 刷新原生地图中的当前位置展示。
-  Future<void> updateUserLocation(MotionPoint point) {
-    return _channel.invokeMethod<void>('updateUserLocation', point.toMap());
-  }
-
-  /// 刷新原生地图中的轨迹折线。
-  Future<void> updateTrack(List<MotionPoint> points) {
-    return _channel.invokeMethod<void>('updateTrack', {
-      'points': points.map((point) => point.toMap()).toList(),
-    });
-  }
-
-  /// 清空原生地图中的轨迹折线和当前位置标记。
-  Future<void> clearTrack({MotionPoint? focusPoint}) {
-    return _channel.invokeMethod<void>('clearTrack', focusPoint?.toMap());
-  }
-
   /// 每次开始运动都显式重置地图相机，不依赖轨迹数组是否变化。
-  Future<void> resetCameraForWorkoutStart({MotionPoint? focusPoint}) {
-    return _channel.invokeMethod<void>(
-      'resetCameraForWorkoutStart',
-      focusPoint?.toMap(),
-    );
+  Future<void> resetCameraForWorkoutStart() {
+    return _channel.invokeMethod<void>('resetCameraForWorkoutStart');
+  }
+
+  /// 同步当前运动状态，让原生地图切换系统蓝点显示策略。
+  Future<void> syncSessionStatus(String sessionStatus) {
+    return _channel.invokeMethod<void>('syncSessionStatus', {
+      'sessionStatus': sessionStatus,
+    });
   }
 }
