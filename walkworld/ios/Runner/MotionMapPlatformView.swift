@@ -23,18 +23,26 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   }
 
   private enum MapAnnotationConfig {
+    /// 起点标识复用标识。
+    static let startMarkerReuseIdentifier = "motion_start_marker"
+    /// 终点标识复用标识。
+    static let endMarkerReuseIdentifier = "motion_end_marker"
     /// 轨迹末端当前位置点外圈直径。
     static let outerDotSize = CGSize(width: 36, height: 36)
     /// 轨迹末端当前位置点内圈直径。
     static let innerDotSize = CGSize(width: 24, height: 24)
     /// 轨迹末端当前位置点复用标识。
     static let trackDotReuseIdentifier = "motion_track_dot"
+    /// 起终点标识内容尺寸。
+    static let markerSize = CGSize(width: 28, height: 28)
   }
 
   private let mapView: MAMapView
   private let methodChannel: FlutterMethodChannel
   private weak var bridge: MotionNativeBridge?
   private var trackPolyline: MAPolyline?
+  private var startAnnotation: MAPointAnnotation?
+  private var endAnnotation: MAPointAnnotation?
   private var trackAnnotation: MAPointAnnotation?
   private var nativeTrackCoordinates: [CLLocationCoordinate2D] = []
   private var hasCenteredOnUserLocation = false
@@ -149,6 +157,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
 
     self.sessionStatus = sessionStatus
     applySystemUserLocationVisibility()
+    syncTrackTerminalAnnotations()
   }
 
   /// 将 Flutter 传来的经纬度字典解析成原生坐标。
@@ -180,13 +189,55 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     }
   }
 
-  /// 运动中统一隐藏高德系统蓝点，只保留轨迹末端点，避免点线来源不一致。
+  /// 移除末端蓝点，避免和起点/终点标记叠加。
+  private func removeTrackAnnotationIfNeeded() {
+    if let annotation = trackAnnotation {
+      mapView.removeAnnotation(annotation)
+      trackAnnotation = nil
+    }
+  }
+
+  /// 刷新起点标记，只在首个有效轨迹点确定后创建一次。
+  private func updateStartAnnotationIfNeeded(coordinate: CLLocationCoordinate2D) {
+    if let annotation = startAnnotation {
+      annotation.coordinate = coordinate
+      return
+    }
+
+    let annotation = MAPointAnnotation()
+    annotation.coordinate = coordinate
+    startAnnotation = annotation
+    mapView.addAnnotation(annotation)
+  }
+
+  /// 刷新终点标记，只在运动结束后贴到最后一个轨迹点。
+  private func updateEndAnnotationIfNeeded(coordinate: CLLocationCoordinate2D) {
+    if let annotation = endAnnotation {
+      annotation.coordinate = coordinate
+      return
+    }
+
+    let annotation = MAPointAnnotation()
+    annotation.coordinate = coordinate
+    endAnnotation = annotation
+    mapView.addAnnotation(annotation)
+  }
+
+  /// 移除终点标记，供新一轮运动开始或中途态切换时使用。
+  private func removeEndAnnotationIfNeeded() {
+    if let annotation = endAnnotation {
+      mapView.removeAnnotation(annotation)
+      endAnnotation = nil
+    }
+  }
+
+  /// 根据当前状态统一切换系统蓝点显示，避免和自绘起终点/轨迹点重叠。
   private func applySystemUserLocationVisibility() {
     let shouldShowSystemUserLocation: Bool
     switch sessionStatus {
-    case .idle, .finished, .error:
+    case .idle, .error:
       shouldShowSystemUserLocation = true
-    case .preparing, .running, .paused:
+    case .preparing, .running, .paused, .finished:
       shouldShowSystemUserLocation = false
     }
 
@@ -194,39 +245,31 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
       mapView.showsUserLocation = shouldShowSystemUserLocation
       mapView.userTrackingMode = .none
     }
-
-    if !shouldShowSystemUserLocation,
-       shouldPreviewLiveLocation(),
-       let userLocation = mapView.userLocation,
-       CLLocationCoordinate2DIsValid(userLocation.coordinate) {
-      updateTrackAnnotation(coordinate: userLocation.coordinate)
-    }
-  }
-
-  /// 运动中如果还没有形成有效轨迹，就让自绘蓝点先跟随当前位置，避免起步前丢失位置感知。
-  private func shouldPreviewLiveLocation() -> Bool {
-    switch sessionStatus {
-    case .preparing, .running, .paused:
-      return nativeTrackCoordinates.isEmpty
-    case .idle, .finished, .error:
-      return false
-    }
   }
 
   /// 原生定位采到新点时，直接追加到地图轨迹，无需 Flutter 中转。
   func appendTrackPoint(_ location: CLLocation) {
-    updateTrackAnnotation(coordinate: location.coordinate)
+    if nativeTrackCoordinates.isEmpty {
+      updateStartAnnotationIfNeeded(coordinate: location.coordinate)
+    }
     nativeTrackCoordinates.append(location.coordinate)
     syncTrackPolyline()
+    syncTrackTerminalAnnotations()
   }
 
   /// App 回前台时，用原生完整历史点重绘整条轨迹。
   func restoreTrack(_ locations: [CLLocation]) {
+    if let startLocation = locations.first {
+      updateStartAnnotationIfNeeded(coordinate: startLocation.coordinate)
+    }
     if let latestLocation = locations.last {
-      updateTrackAnnotation(coordinate: latestLocation.coordinate)
+      if sessionStatus == .finished {
+        updateEndAnnotationIfNeeded(coordinate: latestLocation.coordinate)
+      }
     }
     nativeTrackCoordinates = locations.map(\.coordinate)
     syncTrackPolyline()
+    syncTrackTerminalAnnotations()
   }
 
   /// 统一同步轨迹折线：
@@ -257,6 +300,43 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     fitTrackViewportIfNeeded()
   }
 
+  /// 根据运动状态和轨迹点数量，统一维护起点、终点和末端蓝点。
+  ///
+  /// 规则：
+  /// 1. 开始运动后未形成线段前，只显示“起”
+  /// 2. 形成线段后，显示“起 + 末端蓝点”
+  /// 3. 结束运动后，显示“起 + 终”，隐藏末端蓝点
+  private func syncTrackTerminalAnnotations() {
+    guard let firstCoordinate = nativeTrackCoordinates.first else {
+      removeTrackAnnotationIfNeeded()
+      removeEndAnnotationIfNeeded()
+      return
+    }
+
+    updateStartAnnotationIfNeeded(coordinate: firstCoordinate)
+
+    let hasTrackLine = nativeTrackCoordinates.count >= 2
+    let latestCoordinate = nativeTrackCoordinates.last
+
+    switch sessionStatus {
+    case .finished:
+      removeTrackAnnotationIfNeeded()
+      if let latestCoordinate {
+        updateEndAnnotationIfNeeded(coordinate: latestCoordinate)
+      }
+    case .preparing, .running, .paused:
+      removeEndAnnotationIfNeeded()
+      if hasTrackLine, let latestCoordinate {
+        updateTrackAnnotation(coordinate: latestCoordinate)
+      } else {
+        removeTrackAnnotationIfNeeded()
+      }
+    case .idle, .error:
+      removeTrackAnnotationIfNeeded()
+      removeEndAnnotationIfNeeded()
+    }
+  }
+
   /// 首次拿到有效轨迹后自动对焦一次，后续保留用户手动拖拽后的视角。
   private func fitTrackViewportIfNeeded() {
     guard !hasFittedTrackViewport else {
@@ -276,14 +356,17 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     hasFittedTrackViewport = true
   }
 
-  /// 清空当前位置标记和轨迹折线。
+  /// 清空起点标记、终点标记、当前位置标记和轨迹折线。
   private func clearTrack(focusCoordinate: CLLocationCoordinate2D? = nil) {
     nativeTrackCoordinates.removeAll()
 
-    if let annotation = trackAnnotation {
+    if let annotation = startAnnotation {
       mapView.removeAnnotation(annotation)
-      trackAnnotation = nil
+      startAnnotation = nil
     }
+
+    removeEndAnnotationIfNeeded()
+    removeTrackAnnotationIfNeeded()
 
     if let polyline = trackPolyline {
       mapView.remove(polyline)
@@ -319,6 +402,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     if let focusCoordinate {
       mapView.setCenter(focusCoordinate, animated: false)
       hasCenteredOnUserLocation = true
+      updateStartAnnotationIfNeeded(coordinate: focusCoordinate)
       return
     }
 
@@ -326,6 +410,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
        CLLocationCoordinate2DIsValid(userLocation.coordinate) {
       mapView.setCenter(userLocation.coordinate, animated: false)
       hasCenteredOnUserLocation = true
+      updateStartAnnotationIfNeeded(coordinate: userLocation.coordinate)
     }
   }
 
@@ -339,8 +424,9 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
       return
     }
 
-    if shouldPreviewLiveLocation() {
-      updateTrackAnnotation(coordinate: userLocation.coordinate)
+    if (sessionStatus == .preparing || sessionStatus == .running || sessionStatus == .paused),
+       nativeTrackCoordinates.isEmpty {
+      updateStartAnnotationIfNeeded(coordinate: userLocation.coordinate)
     }
 
     guard !hasCenteredOnUserLocation else {
@@ -355,6 +441,26 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   func mapView(_ mapView: MAMapView!, viewFor annotation: MAAnnotation!) -> MAAnnotationView! {
     if annotation is MAUserLocation {
       return nil
+    }
+
+    if let startAnnotation,
+       annotation.isEqual(startAnnotation) {
+      return buildMarkerAnnotationView(
+        mapView: mapView,
+        annotation: annotation,
+        reuseIdentifier: MapAnnotationConfig.startMarkerReuseIdentifier,
+        text: "起"
+      )
+    }
+
+    if let endAnnotation,
+       annotation.isEqual(endAnnotation) {
+      return buildMarkerAnnotationView(
+        mapView: mapView,
+        annotation: annotation,
+        reuseIdentifier: MapAnnotationConfig.endMarkerReuseIdentifier,
+        text: "终"
+      )
     }
 
     guard let trackAnnotation,
@@ -414,5 +520,47 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     }
 
     return nil
+  }
+
+  /// 统一构建起点/终点圆形文字标记，避免样式实现分散。
+  private func buildMarkerAnnotationView(
+    mapView: MAMapView,
+    annotation: MAAnnotation,
+    reuseIdentifier: String,
+    text: String
+  ) -> MAAnnotationView {
+    let annotationView: MAAnnotationView
+    if let reusedView = mapView.dequeueReusableAnnotationView(
+      withIdentifier: reuseIdentifier
+    ) {
+      annotationView = reusedView
+      annotationView.annotation = annotation
+    } else {
+      annotationView = MAAnnotationView(
+        annotation: annotation,
+        reuseIdentifier: reuseIdentifier
+      )
+      annotationView.canShowCallout = false
+      annotationView.isDraggable = false
+      annotationView.centerOffset = CGPoint(x: 0, y: -MapAnnotationConfig.markerSize.height / 2)
+      annotationView.bounds = CGRect(origin: .zero, size: MapAnnotationConfig.markerSize)
+
+      let markerView = UILabel(frame: annotationView.bounds)
+      markerView.backgroundColor = UIColor.systemBlue
+      markerView.textColor = .white
+      markerView.textAlignment = .center
+      markerView.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
+      markerView.layer.cornerRadius = MapAnnotationConfig.markerSize.width / 2
+      markerView.layer.masksToBounds = true
+      markerView.isUserInteractionEnabled = false
+      markerView.tag = 1000
+      annotationView.addSubview(markerView)
+    }
+
+    if let markerView = annotationView.viewWithTag(1000) as? UILabel {
+      markerView.text = text
+    }
+
+    return annotationView
   }
 }
