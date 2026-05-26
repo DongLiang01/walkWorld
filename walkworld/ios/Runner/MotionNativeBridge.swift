@@ -159,10 +159,10 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
 
   private func setupLocationManager() {
     locationManager.delegate = self
-    locationManager.desiredAccuracy = kCLLocationAccuracyBest
+      //小于5米的距离，不更新定位
     locationManager.distanceFilter = 5
-    locationManager.pausesLocationUpdatesAutomatically = false
-    locationManager.locatingWithReGeocode = false
+      //允许app后台更新定位
+    locationManager.allowsBackgroundLocationUpdates = true
   }
 
   private func bindChannels() {
