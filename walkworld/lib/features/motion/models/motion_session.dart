@@ -10,6 +10,7 @@ class MotionSession {
     required this.totalDistanceMeters,
     required this.points,
     this.averageSpeedMps,
+    this.routeSnapshotBase64,
   });
 
   /// 当前运动会话的唯一标识。
@@ -33,6 +34,9 @@ class MotionSession {
   /// 本次运动的完整轨迹点集合。
   final List<MotionPoint> points;
 
+  /// 运动结束时生成的路线截图，使用 Base64 编码，供结束弹窗展示。
+  final String? routeSnapshotBase64;
+
   MotionSession copyWith({
     String? sessionId,
     int? startTime,
@@ -41,6 +45,7 @@ class MotionSession {
     double? totalDistanceMeters,
     double? averageSpeedMps,
     List<MotionPoint>? points,
+    String? routeSnapshotBase64,
   }) {
     return MotionSession(
       sessionId: sessionId ?? this.sessionId,
@@ -50,6 +55,7 @@ class MotionSession {
       totalDistanceMeters: totalDistanceMeters ?? this.totalDistanceMeters,
       averageSpeedMps: averageSpeedMps ?? this.averageSpeedMps,
       points: points ?? this.points,
+      routeSnapshotBase64: routeSnapshotBase64 ?? this.routeSnapshotBase64,
     );
   }
 
@@ -62,6 +68,7 @@ class MotionSession {
       'totalDistanceMeters': totalDistanceMeters,
       'averageSpeedMps': averageSpeedMps,
       'points': points.map((point) => point.toMap()).toList(),
+      'routeSnapshotBase64': routeSnapshotBase64,
     };
   }
 
@@ -80,6 +87,7 @@ class MotionSession {
           .whereType<Map<Object?, Object?>>()
           .map(MotionPoint.fromMap)
           .toList(growable: false),
+      routeSnapshotBase64: map['routeSnapshotBase64'] as String?,
     );
   }
 }

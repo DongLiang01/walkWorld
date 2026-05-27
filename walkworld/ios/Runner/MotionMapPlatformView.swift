@@ -2,6 +2,7 @@ import Flutter
 import MAMapKit
 import UIKit
 import CoreLocation
+import Foundation
 
 /// 当前阶段的地图原生容器。
 ///
@@ -13,6 +14,14 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     static let initialZoomLevel: CGFloat = 16
     /// 开始运动后聚焦起跑点时使用的缩放级别，要比初始态更聚焦。
     static let workoutStartZoomLevel: CGFloat = 18
+    /// 结束弹窗路线截图的留白，避免轨迹贴边。
+    static let finishSnapshotEdgePadding = UIEdgeInsets(top: 28, left: 24, bottom: 28, right: 24)
+    /// 结束弹窗路线截图导出宽度，控制传给 Flutter 的图片体积。
+    static let finishSnapshotTargetWidth: CGFloat = 640
+    /// 结束弹窗路线截图导出压缩质量。
+    static let finishSnapshotCompressionQuality: CGFloat = 0.74
+    /// 结束截图时，在自动拟合轨迹后额外缩小一个缩放级别，避免起终点过于贴近画面边缘。
+    static let finishSnapshotZoomOutDelta: CGFloat = 1
   }
 
   private enum SessionStatusValue: String {
@@ -431,6 +440,50 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     }
   }
 
+  /// 为结束弹窗生成路线截图：
+  /// 1. 视口缩放到完整轨迹
+  /// 2. 临时切成“起 + 终 + 路线”的结束展示态
+  /// 2. 等待地图完成本次相机刷新
+  /// 3. 导出压缩后的 Base64 图片给 Flutter
+  func captureFinishedRouteSnapshot(completion: @escaping (String?) -> Void) {
+    DispatchQueue.main.async { [weak self] in
+      guard let self else {
+        completion(nil)
+        return
+      }
+
+      self.prepareFinishedRouteSnapshotPresentation()
+      self.fitCameraForFinishedRouteSnapshotIfNeeded()
+
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+        guard let self else {
+          completion(nil)
+          return
+        }
+
+        completion(self.buildRouteSnapshotBase64())
+      }
+    }
+  }
+
+  /// 截图前把地图覆盖物切到结束态展示：
+  /// - 保留起点与轨迹
+  /// - 移除末端蓝点
+  /// - 在最后一个轨迹点上展示“终”
+  private func prepareFinishedRouteSnapshotPresentation() {
+    removeTrackAnnotationIfNeeded()
+
+    if let firstCoordinate = nativeTrackCoordinates.first {
+      updateStartAnnotationIfNeeded(coordinate: firstCoordinate)
+    }
+
+    if let latestCoordinate = nativeTrackCoordinates.last {
+      updateEndAnnotationIfNeeded(coordinate: latestCoordinate)
+    } else {
+      removeEndAnnotationIfNeeded()
+    }
+  }
+
   /// 聚焦到当前位置，并按调用方要求决定是否恢复自动跟随。
   private func focusCurrentLocation(resumeFollow: Bool) {
     let targetCoordinate: CLLocationCoordinate2D?
@@ -450,6 +503,68 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     isFollowingUser = resumeFollow
     setMapCenter(targetCoordinate, animated: true)
     hasCenteredOnUserLocation = true
+  }
+
+  /// 结束截图前把地图相机调到完整路径可见的视口。
+  private func fitCameraForFinishedRouteSnapshotIfNeeded() {
+    guard !nativeTrackCoordinates.isEmpty else {
+      if let userLocation = mapView.userLocation,
+         CLLocationCoordinate2DIsValid(userLocation.coordinate) {
+        setMapCenter(userLocation.coordinate, animated: false)
+      }
+      mapView.setZoomLevel(MapCameraConfig.workoutStartZoomLevel, animated: false)
+      return
+    }
+
+    if let trackPolyline,
+       nativeTrackCoordinates.count >= 2 {
+      isProgrammaticCameraChange = true
+      mapView.showOverlays(
+        [trackPolyline],
+        edgePadding: MapCameraConfig.finishSnapshotEdgePadding,
+        animated: false
+      )
+      let fittedZoomLevel = mapView.zoomLevel
+      mapView.setZoomLevel(
+        max(mapView.minZoomLevel, fittedZoomLevel - MapCameraConfig.finishSnapshotZoomOutDelta),
+        animated: false
+      )
+      return
+    }
+
+    if let firstCoordinate = nativeTrackCoordinates.first {
+      setMapCenter(firstCoordinate, animated: false)
+      mapView.setZoomLevel(MapCameraConfig.workoutStartZoomLevel, animated: false)
+    }
+  }
+
+  /// 将当前地图画面导出为压缩图片，并编码成 Base64 字符串。
+  private func buildRouteSnapshotBase64() -> String? {
+    let bounds = mapView.bounds.integral
+    guard bounds.width > 0, bounds.height > 0 else {
+      return nil
+    }
+
+    let targetWidth = min(MapCameraConfig.finishSnapshotTargetWidth, bounds.width)
+    let scale = max(targetWidth / bounds.width, 0.6)
+    let targetSize = CGSize(width: targetWidth, height: bounds.height * scale)
+    let format = UIGraphicsImageRendererFormat.default()
+    format.scale = 1
+    let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
+    let image = renderer.image { _ in
+      mapView.drawHierarchy(
+        in: CGRect(origin: .zero, size: targetSize),
+        afterScreenUpdates: true
+      )
+    }
+
+    guard let imageData = image.jpegData(
+      compressionQuality: MapCameraConfig.finishSnapshotCompressionQuality
+    ) else {
+      return nil
+    }
+
+    return imageData.base64EncodedString()
   }
 
   /// 封装地图中心更新，统一标记这是代码驱动的相机变化。

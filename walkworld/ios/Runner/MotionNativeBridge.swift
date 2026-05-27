@@ -340,7 +340,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     ])
   }
 
-  private func handleStopWorkout(result: FlutterResult) {
+  private func handleStopWorkout(result: @escaping FlutterResult) {
     guard currentStatus == MotionStatusValue.running ||
             currentStatus == MotionStatusValue.paused else {
       result(
@@ -368,24 +368,38 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
       ? totalDistanceMeters / Double(durationSeconds)
       : nil
 
-    let summary: [String: Any?] = [
-      "sessionId": currentSessionId ?? "",
-      "startTime": sessionStartTimeMillis ?? endTimeMillis,
-      "endTime": endTimeMillis,
-      "durationSeconds": durationSeconds,
-      "totalDistanceMeters": totalDistanceMeters,
-      "averageSpeedMps": averageSpeedMps,
-      "points": recordedLocations.map(buildLocationPayload)
-    ]
+    let finishStopResult: (String?) -> Void = { [weak self] routeSnapshotBase64 in
+      guard let self else {
+        return
+      }
 
-    pushStatusChangedEvent()
-    pushMotionUpdatedEvent(referenceTimeMillis: endTimeMillis)
+      let summary: [String: Any?] = [
+        "sessionId": self.currentSessionId ?? "",
+        "startTime": self.sessionStartTimeMillis ?? endTimeMillis,
+        "endTime": endTimeMillis,
+        "durationSeconds": durationSeconds,
+        "totalDistanceMeters": self.totalDistanceMeters,
+        "averageSpeedMps": averageSpeedMps,
+        "points": self.recordedLocations.map(self.buildLocationPayload),
+        "routeSnapshotBase64": routeSnapshotBase64
+      ]
 
-    result([
-      "accepted": true,
-      "status": currentStatus,
-      "summary": compactDictionary(summary)
-    ])
+      self.pushStatusChangedEvent()
+      self.pushMotionUpdatedEvent(referenceTimeMillis: endTimeMillis)
+
+      result([
+        "accepted": true,
+        "status": self.currentStatus,
+        "summary": self.compactDictionary(summary)
+      ])
+    }
+
+    if let mapView {
+      mapView.captureFinishedRouteSnapshot(completion: finishStopResult)
+      return
+    }
+
+    finishStopResult(nil)
   }
 
   private func handleAuthorizationChanged(_ status: CLAuthorizationStatus) {

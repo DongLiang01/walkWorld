@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -47,6 +50,7 @@ class MotionFinishSheet extends ConsumerWidget {
           realtime?.averageSpeedMps ??
           realtime?.currentSpeedMps,
     );
+    final routeSnapshotBase64 = finishedSession?.routeSnapshotBase64;
 
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: mediaQuery.size.height * 0.88),
@@ -153,6 +157,15 @@ class MotionFinishSheet extends ConsumerWidget {
                         letterSpacing: -0.1145,
                       ),
                     ),
+                    if (routeSnapshotBase64 != null &&
+                        routeSnapshotBase64.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _RouteSnapshotCard(
+                        routeSnapshotBase64: routeSnapshotBase64,
+                        appTokens: appTokens,
+                        isDark: isDark,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -252,6 +265,86 @@ class MotionFinishSheet extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _RouteSnapshotCard extends StatelessWidget {
+  const _RouteSnapshotCard({
+    required this.routeSnapshotBase64,
+    required this.appTokens,
+    required this.isDark,
+  });
+
+  final String routeSnapshotBase64;
+  final AppThemeTokens appTokens;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    Uint8List? imageBytes;
+    try {
+      imageBytes = base64Decode(routeSnapshotBase64);
+    } catch (_) {
+      imageBytes = null;
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: appTokens.motionModalMutedActionBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.05),
+          width: 0.8,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: AspectRatio(
+        aspectRatio: 1.78,
+        child: imageBytes == null
+            ? ColoredBox(
+                color: appTokens.motionModalMutedActionBackground,
+                child: Center(
+                  child: Text(
+                    '路线截图生成失败',
+                    style: TextStyle(
+                      color: appTokens.motionModalDescription,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              )
+            : Image.memory(
+                imageBytes,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return ColoredBox(
+                    color: appTokens.motionModalMutedActionBackground,
+                    child: Center(
+                      child: Text(
+                        '路线截图生成失败',
+                        style: TextStyle(
+                          color: appTokens.motionModalDescription,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
