@@ -28,6 +28,7 @@ class MotionPage extends ConsumerStatefulWidget {
 
 class _MotionPageState extends ConsumerState<MotionPage> {
   MotionType? _selectedMotionType;
+  MotionMapNativeController? _mapController;
   bool _isFinishSheetVisible = false;
   bool _isErrorDialogVisible = false;
   String? _lastPresentedErrorKey;
@@ -53,6 +54,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
     final theme = Theme.of(context);
     final appTokens = theme.extension<AppThemeTokens>()!;
     final pageTokens = MotionPageTokens.fromTheme(appTokens, theme.brightness);
+    final mediaQuery = MediaQuery.of(context);
     final canStart =
         motionState.status == MotionStatus.idle ||
         motionState.status == MotionStatus.finished ||
@@ -77,6 +79,9 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                 creationParams: {
                   'showUserLocation': true,
                   'sessionStatus': motionState.status.value,
+                },
+                onControllerCreated: (controller) {
+                  _mapController = controller;
                 },
                 workoutStartResetToken: motionState.currentSessionId,
                 sessionStatus: motionState.status,
@@ -119,6 +124,27 @@ class _MotionPageState extends ConsumerState<MotionPage> {
                       onStart: canStart ? () => _handleStart(controller) : null,
                     )
                   : const SizedBox.shrink(key: ValueKey('running')),
+            ),
+          ),
+          Positioned(
+            right: 16,
+            bottom: mediaQuery.padding.bottom + 214,
+            child: IgnorePointer(
+              ignoring: !showRunningOverlay,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 180),
+                opacity: showRunningOverlay ? 1 : 0,
+                child: _MapRecenterButton(
+                  pageTokens: pageTokens,
+                  onTap: () {
+                    final controller = _mapController;
+                    if (controller == null) {
+                      return;
+                    }
+                    unawaited(controller.focusCurrentLocation());
+                  },
+                ),
+              ),
             ),
           ),
           Positioned(
@@ -312,5 +338,45 @@ class _MotionPageState extends ConsumerState<MotionPage> {
       'location_service_disabled' => '去开启',
       _ => '稍后重试',
     };
+  }
+}
+
+/// 地图回中按钮：用于用户拖拽后快速回到当前位置并恢复跟随。
+class _MapRecenterButton extends StatelessWidget {
+  const _MapRecenterButton({required this.pageTokens, required this.onTap});
+
+  final MotionPageTokens pageTokens;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(23),
+        child: Ink(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: pageTokens.overlayBackground,
+            borderRadius: BorderRadius.circular(23),
+            border: Border.all(color: pageTokens.overlayBorder),
+            boxShadow: [
+              BoxShadow(
+                color: pageTokens.overlayShadow,
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Icon(
+            Icons.my_location_rounded,
+            size: 20,
+            color: pageTokens.overlayPrimaryText,
+          ),
+        ),
+      ),
+    );
   }
 }

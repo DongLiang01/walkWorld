@@ -17,6 +17,7 @@ class MotionMapView extends StatefulWidget {
     super.key,
     this.creationParams,
     this.workoutStartResetToken,
+    this.onControllerCreated,
     required this.sessionStatus,
   });
 
@@ -30,6 +31,9 @@ class MotionMapView extends StatefulWidget {
 
   /// 当前运动状态，用于同步原生地图展示策略。
   final MotionStatus sessionStatus;
+
+  /// 原生地图控制器创建完成后的回调，供页面层触发“回到当前位置”等操作。
+  final ValueChanged<MotionMapNativeController>? onControllerCreated;
 
   static const String viewType = 'walkworld/motion_map_view';
 
@@ -81,6 +85,7 @@ class _MotionMapViewState extends State<MotionMapView> {
   Future<void> _handlePlatformViewCreated(int viewId) async {
     final controller = MotionMapNativeController(viewId: viewId);
     _nativeController = controller;
+    widget.onControllerCreated?.call(controller);
     await controller.syncSessionStatus(widget.sessionStatus.value);
   }
 }
@@ -105,5 +110,10 @@ class MotionMapNativeController {
     return _channel.invokeMethod<void>('syncSessionStatus', {
       'sessionStatus': sessionStatus,
     });
+  }
+
+  /// 回到当前位置；running 时恢复自动跟随，其他状态仅回中不持续跟随。
+  Future<void> focusCurrentLocation() {
+    return _channel.invokeMethod<void>('focusCurrentLocation');
   }
 }

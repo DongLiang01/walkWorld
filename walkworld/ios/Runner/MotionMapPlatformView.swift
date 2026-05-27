@@ -46,8 +46,11 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   private var trackAnnotation: MAPointAnnotation?
   private var nativeTrackCoordinates: [CLLocationCoordinate2D] = []
   private var hasCenteredOnUserLocation = false
-  private var hasFittedTrackViewport = false
   private var sessionStatus: SessionStatusValue = .idle
+  /// 当前是否处于自动跟随用户状态。
+  private var isFollowingUser = false
+  /// 标记最近一次地图中心变化是否由代码主动触发，用于避免误判为用户手势。
+  private var isProgrammaticCameraChange = false
 
   init(
     frame: CGRect,
@@ -126,6 +129,9 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
       case "resetCameraForWorkoutStart":
         self.handleResetCameraForWorkoutStart(call: call, result: result)
         result(nil)
+      case "focusCurrentLocation":
+        self.handleFocusCurrentLocation(call: call, result: result)
+        result(nil)
       case "syncSessionStatus":
         self.handleSyncSessionStatus(call: call, result: result)
         result(nil)
@@ -144,6 +150,19 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     resetCameraForWorkoutStart(focusCoordinate: focusCoordinate)
   }
 
+  /// 手动点击“回到当前位置”时回中地图。
+  ///
+  /// 规则：
+  /// 1. running 时恢复自动跟随
+  /// 2. paused/finished 时只回中，不进入持续跟随
+  private func handleFocusCurrentLocation(
+    call: FlutterMethodCall,
+    result: FlutterResult
+  ) {
+    let shouldResumeFollow = sessionStatus == .running
+    focusCurrentLocation(resumeFollow: shouldResumeFollow)
+  }
+
   /// 同步 Flutter 侧运动状态，统一切换系统蓝点显示策略。
   private func handleSyncSessionStatus(
     call: FlutterMethodCall,
@@ -157,6 +176,9 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
 
     self.sessionStatus = sessionStatus
     applySystemUserLocationVisibility()
+    if sessionStatus != .running {
+      isFollowingUser = false
+    }
     syncTrackTerminalAnnotations()
   }
 
@@ -184,7 +206,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     }
 
     if !hasCenteredOnUserLocation {
-      mapView.setCenter(coordinate, animated: false)
+      setMapCenter(coordinate, animated: false)
       hasCenteredOnUserLocation = true
     }
   }
@@ -255,6 +277,9 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     nativeTrackCoordinates.append(location.coordinate)
     syncTrackPolyline()
     syncTrackTerminalAnnotations()
+    if sessionStatus == .running, isFollowingUser {
+      setMapCenter(location.coordinate, animated: false)
+    }
   }
 
   /// App 回前台时，用原生完整历史点重绘整条轨迹。
@@ -265,6 +290,9 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     if let latestLocation = locations.last {
       if sessionStatus == .finished {
         updateEndAnnotationIfNeeded(coordinate: latestLocation.coordinate)
+      }
+      if sessionStatus == .running, isFollowingUser {
+        setMapCenter(latestLocation.coordinate, animated: false)
       }
     }
     nativeTrackCoordinates = locations.map(\.coordinate)
@@ -290,14 +318,12 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
         &coordinates,
         count: coordinates.count
       )
-      fitTrackViewportIfNeeded()
       return
     }
 
     let polyline = MAPolyline(coordinates: &coordinates, count: UInt(coordinates.count))
     trackPolyline = polyline
     mapView.add(polyline)
-    fitTrackViewportIfNeeded()
   }
 
   /// 根据运动状态和轨迹点数量，统一维护起点、终点和末端蓝点。
@@ -337,25 +363,6 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     }
   }
 
-  /// 首次拿到有效轨迹后自动对焦一次，后续保留用户手动拖拽后的视角。
-  private func fitTrackViewportIfNeeded() {
-    guard !hasFittedTrackViewport else {
-      return
-    }
-
-    guard let trackPolyline else {
-      return
-    }
-
-    mapView.showOverlays(
-      [trackPolyline],
-      edgePadding: UIEdgeInsets(top: 80, left: 40, bottom: 80, right: 40),
-      animated: false
-    )
-    hasCenteredOnUserLocation = true
-    hasFittedTrackViewport = true
-  }
-
   /// 清空起点标记、终点标记、当前位置标记和轨迹折线。
   private func clearTrack(focusCoordinate: CLLocationCoordinate2D? = nil) {
     nativeTrackCoordinates.removeAll()
@@ -374,20 +381,20 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     }
 
     hasCenteredOnUserLocation = false
-    hasFittedTrackViewport = false
+    isFollowingUser = false
     mapView.setZoomLevel(MapCameraConfig.initialZoomLevel, animated: false)
 
     /// 新一轮运动开始前清空旧轨迹时，优先把视角恢复到当前用户位置，
     /// 避免上一段轨迹留下的大范围视口影响本次起跑体验。
     if let focusCoordinate {
-      mapView.setCenter(focusCoordinate, animated: false)
+      setMapCenter(focusCoordinate, animated: false)
       hasCenteredOnUserLocation = true
       return
     }
 
     if let userLocation = mapView.userLocation,
        CLLocationCoordinate2DIsValid(userLocation.coordinate) {
-      mapView.setCenter(userLocation.coordinate, animated: false)
+      setMapCenter(userLocation.coordinate, animated: false)
       hasCenteredOnUserLocation = true
     }
   }
@@ -396,11 +403,11 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   private func resetCameraForWorkoutStart(focusCoordinate: CLLocationCoordinate2D? = nil) {
     clearTrack(focusCoordinate: focusCoordinate)
     hasCenteredOnUserLocation = false
-    hasFittedTrackViewport = false
+    isFollowingUser = true
     mapView.setZoomLevel(MapCameraConfig.initialZoomLevel, animated: false)
 
     if let focusCoordinate {
-      mapView.setCenter(focusCoordinate, animated: false)
+      setMapCenter(focusCoordinate, animated: false)
       hasCenteredOnUserLocation = true
       updateStartAnnotationIfNeeded(coordinate: focusCoordinate)
       return
@@ -408,10 +415,40 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
 
     if let userLocation = mapView.userLocation,
        CLLocationCoordinate2DIsValid(userLocation.coordinate) {
-      mapView.setCenter(userLocation.coordinate, animated: false)
+      setMapCenter(userLocation.coordinate, animated: false)
       hasCenteredOnUserLocation = true
       updateStartAnnotationIfNeeded(coordinate: userLocation.coordinate)
     }
+  }
+
+  /// 聚焦到当前位置，并按调用方要求决定是否恢复自动跟随。
+  private func focusCurrentLocation(resumeFollow: Bool) {
+    let targetCoordinate: CLLocationCoordinate2D?
+    if let latestCoordinate = nativeTrackCoordinates.last {
+      targetCoordinate = latestCoordinate
+    } else if let userLocation = mapView.userLocation,
+              CLLocationCoordinate2DIsValid(userLocation.coordinate) {
+      targetCoordinate = userLocation.coordinate
+    } else {
+      targetCoordinate = nil
+    }
+
+    guard let targetCoordinate else {
+      return
+    }
+
+    isFollowingUser = resumeFollow
+    setMapCenter(targetCoordinate, animated: true)
+    hasCenteredOnUserLocation = true
+  }
+
+  /// 封装地图中心更新，统一标记这是代码驱动的相机变化。
+  private func setMapCenter(
+    _ coordinate: CLLocationCoordinate2D,
+    animated: Bool
+  ) {
+    isProgrammaticCameraChange = true
+    mapView.setCenter(coordinate, animated: animated)
   }
 
   /// 首次拿到系统用户定位后，立即把地图中心切到当前位置。
@@ -427,14 +464,49 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     if (sessionStatus == .preparing || sessionStatus == .running || sessionStatus == .paused),
        nativeTrackCoordinates.isEmpty {
       updateStartAnnotationIfNeeded(coordinate: userLocation.coordinate)
+      if sessionStatus == .running, isFollowingUser {
+        setMapCenter(userLocation.coordinate, animated: false)
+        hasCenteredOnUserLocation = true
+      }
     }
 
     guard !hasCenteredOnUserLocation else {
       return
     }
 
-    mapView.setCenter(userLocation.coordinate, animated: false)
+    setMapCenter(userLocation.coordinate, animated: false)
     hasCenteredOnUserLocation = true
+  }
+
+  /// 用户手动拖拽地图时，暂停自动跟随，保留当前缩放比例与浏览视角。
+  func mapView(_ mapView: MAMapView!, mapDidMoveByUser wasUserAction: Bool) {
+    guard wasUserAction, !isProgrammaticCameraChange else {
+      isProgrammaticCameraChange = false
+      return
+    }
+
+    isFollowingUser = false
+  }
+
+  /// 用户手动缩放地图时，同样暂停自动跟随，但不重置缩放比例。
+  func mapView(_ mapView: MAMapView!, mapDidZoomByUser wasUserAction: Bool) {
+    guard wasUserAction, !isProgrammaticCameraChange else {
+      isProgrammaticCameraChange = false
+      return
+    }
+
+    isFollowingUser = false
+  }
+
+  /// 一次程序触发的地图位移完成后，清理标记，避免影响后续手势判定。
+  func mapView(
+    _ mapView: MAMapView!,
+    regionDidChangeAnimated animated: Bool,
+    wasUserAction: Bool
+  ) {
+    if !wasUserAction {
+      isProgrammaticCameraChange = false
+    }
   }
 
   /// 为运动中的当前位置点提供统一的蓝色圆点样式。
