@@ -23,7 +23,7 @@ class PreStartActionArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final buttonLabel = switch (motionState.status) {
-      MotionStatus.finished => '再来一次',
+      MotionStatus.finished => '开始运动',
       MotionStatus.error => '重新开始',
       MotionStatus.preparing => '正在准备',
       _ => '开始运动',

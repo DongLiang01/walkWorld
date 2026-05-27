@@ -11,6 +11,8 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   private enum MapCameraConfig {
     /// 运动页默认进入时使用的基础缩放级别。
     static let initialZoomLevel: CGFloat = 16
+    /// 开始运动后聚焦起跑点时使用的缩放级别，要比初始态更聚焦。
+    static let workoutStartZoomLevel: CGFloat = 18
   }
 
   private enum SessionStatusValue: String {
@@ -179,6 +181,10 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     if sessionStatus != .running {
       isFollowingUser = false
     }
+    if sessionStatus == .finished {
+      clearTrack()
+      return
+    }
     syncTrackTerminalAnnotations()
   }
 
@@ -257,9 +263,9 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   private func applySystemUserLocationVisibility() {
     let shouldShowSystemUserLocation: Bool
     switch sessionStatus {
-    case .idle, .error:
+    case .idle, .finished, .error:
       shouldShowSystemUserLocation = true
-    case .preparing, .running, .paused, .finished:
+    case .preparing, .running, .paused:
       shouldShowSystemUserLocation = false
     }
 
@@ -284,16 +290,18 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
 
   /// App 回前台时，用原生完整历史点重绘整条轨迹。
   func restoreTrack(_ locations: [CLLocation]) {
+    if sessionStatus == .finished {
+      clearTrack()
+      return
+    }
+
     if let startLocation = locations.first {
       updateStartAnnotationIfNeeded(coordinate: startLocation.coordinate)
     }
-    if let latestLocation = locations.last {
-      if sessionStatus == .finished {
-        updateEndAnnotationIfNeeded(coordinate: latestLocation.coordinate)
-      }
-      if sessionStatus == .running, isFollowingUser {
-        setMapCenter(latestLocation.coordinate, animated: false)
-      }
+    if let latestLocation = locations.last,
+       sessionStatus == .running,
+       isFollowingUser {
+      setMapCenter(latestLocation.coordinate, animated: false)
     }
     nativeTrackCoordinates = locations.map(\.coordinate)
     syncTrackPolyline()
@@ -331,7 +339,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   /// 规则：
   /// 1. 开始运动后未形成线段前，只显示“起”
   /// 2. 形成线段后，显示“起 + 末端蓝点”
-  /// 3. 结束运动后，显示“起 + 终”，隐藏末端蓝点
+  /// 3. 结束运动后清空所有自绘覆盖物，仅保留系统默认蓝点
   private func syncTrackTerminalAnnotations() {
     guard let firstCoordinate = nativeTrackCoordinates.first else {
       removeTrackAnnotationIfNeeded()
@@ -346,10 +354,12 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
 
     switch sessionStatus {
     case .finished:
-      removeTrackAnnotationIfNeeded()
-      if let latestCoordinate {
-        updateEndAnnotationIfNeeded(coordinate: latestCoordinate)
+      if let annotation = startAnnotation {
+        mapView.removeAnnotation(annotation)
+        startAnnotation = nil
       }
+      removeTrackAnnotationIfNeeded()
+      removeEndAnnotationIfNeeded()
     case .preparing, .running, .paused:
       removeEndAnnotationIfNeeded()
       if hasTrackLine, let latestCoordinate {
@@ -404,7 +414,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     clearTrack(focusCoordinate: focusCoordinate)
     hasCenteredOnUserLocation = false
     isFollowingUser = true
-    mapView.setZoomLevel(MapCameraConfig.initialZoomLevel, animated: false)
+    mapView.setZoomLevel(MapCameraConfig.workoutStartZoomLevel, animated: false)
 
     if let focusCoordinate {
       setMapCenter(focusCoordinate, animated: false)
