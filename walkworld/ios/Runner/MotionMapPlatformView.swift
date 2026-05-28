@@ -743,7 +743,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
       annotationView.bounds = CGRect(origin: .zero, size: MapAnnotationConfig.markerSize)
 
       let markerView = UILabel(frame: annotationView.bounds)
-      markerView.backgroundColor = UIColor.systemBlue
+        markerView.backgroundColor = reuseIdentifier == MapAnnotationConfig.endMarkerReuseIdentifier ? UIColor.systemRed : UIColor.systemBlue
       markerView.textColor = .white
       markerView.textAlignment = .center
       markerView.font = UIFont.systemFont(ofSize: 14, weight: .semibold)
