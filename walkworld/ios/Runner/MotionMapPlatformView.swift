@@ -33,6 +33,11 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     case error
   }
 
+  private enum FinishSnapshotStep {
+    case waitingForFit
+    case waitingForZoomOut
+  }
+
   private enum MapAnnotationConfig {
     /// 起点标识复用标识。
     static let startMarkerReuseIdentifier = "motion_start_marker"
@@ -62,6 +67,9 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   private var isFollowingUser = false
   /// 标记最近一次地图中心变化是否由代码主动触发，用于避免误判为用户手势。
   private var isProgrammaticCameraChange = false
+  private var finishSnapshotStep: FinishSnapshotStep?
+  private var finishSnapshotCompletion: ((String?) -> Void)?
+  private var finishSnapshotFallbackWorkItem: DispatchWorkItem?
 
   init(
     frame: CGRect,
@@ -443,8 +451,8 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   /// 为结束弹窗生成路线截图：
   /// 1. 视口缩放到完整轨迹
   /// 2. 临时切成“起 + 终 + 路线”的结束展示态
-  /// 2. 等待地图完成本次相机刷新
-  /// 3. 导出压缩后的 Base64 图片给 Flutter
+  /// 3. 等待高德完成自动拟合后，再额外缩小一个缩放级别
+  /// 4. 导出压缩后的 Base64 图片给 Flutter
   func captureFinishedRouteSnapshot(completion: @escaping (String?) -> Void) {
     DispatchQueue.main.async { [weak self] in
       guard let self else {
@@ -452,17 +460,16 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
         return
       }
 
+      self.resetPendingFinishSnapshot()
+      self.finishSnapshotCompletion = completion
       self.prepareFinishedRouteSnapshotPresentation()
-      self.fitCameraForFinishedRouteSnapshotIfNeeded()
 
-      DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
-        guard let self else {
-          completion(nil)
-          return
-        }
-
-        completion(self.buildRouteSnapshotBase64())
+      if self.startFinishedRouteFitIfNeeded() {
+        self.scheduleFinishSnapshotFallback()
+        return
       }
+
+      self.finishFinishedRouteSnapshot()
     }
   }
 
@@ -506,36 +513,89 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
   }
 
   /// 结束截图前把地图相机调到完整路径可见的视口。
-  private func fitCameraForFinishedRouteSnapshotIfNeeded() {
+  private func startFinishedRouteFitIfNeeded() -> Bool {
     guard !nativeTrackCoordinates.isEmpty else {
       if let userLocation = mapView.userLocation,
          CLLocationCoordinate2DIsValid(userLocation.coordinate) {
         setMapCenter(userLocation.coordinate, animated: false)
       }
       mapView.setZoomLevel(MapCameraConfig.workoutStartZoomLevel, animated: false)
-      return
+      return false
     }
 
     if let trackPolyline,
        nativeTrackCoordinates.count >= 2 {
+      finishSnapshotStep = .waitingForFit
       isProgrammaticCameraChange = true
       mapView.showOverlays(
         [trackPolyline],
         edgePadding: MapCameraConfig.finishSnapshotEdgePadding,
         animated: false
       )
-      let fittedZoomLevel = mapView.zoomLevel
-      mapView.setZoomLevel(
-        max(mapView.minZoomLevel, fittedZoomLevel - MapCameraConfig.finishSnapshotZoomOutDelta),
-        animated: false
-      )
-      return
+      return true
     }
 
     if let firstCoordinate = nativeTrackCoordinates.first {
       setMapCenter(firstCoordinate, animated: false)
       mapView.setZoomLevel(MapCameraConfig.workoutStartZoomLevel, animated: false)
     }
+    return false
+  }
+
+  /// 高德完成轨迹自动拟合后，再基于当前实际缩放级别额外缩小一档。
+  private func startFinishedRouteZoomOutIfNeeded() {
+    guard trackPolyline != nil,
+          nativeTrackCoordinates.count >= 2 else {
+      finishFinishedRouteSnapshot()
+      return
+    }
+
+    finishSnapshotStep = .waitingForZoomOut
+    isProgrammaticCameraChange = true
+    let fittedZoomLevel = mapView.zoomLevel
+    mapView.setZoomLevel(
+      max(mapView.minZoomLevel, fittedZoomLevel - MapCameraConfig.finishSnapshotZoomOutDelta),
+      animated: false
+    )
+    scheduleFinishSnapshotFallback()
+  }
+
+  private func advanceFinishSnapshotStepIfNeeded() {
+    finishSnapshotFallbackWorkItem?.cancel()
+    finishSnapshotFallbackWorkItem = nil
+
+    switch finishSnapshotStep {
+    case .waitingForFit:
+      startFinishedRouteZoomOutIfNeeded()
+    case .waitingForZoomOut:
+      finishFinishedRouteSnapshot()
+    case nil:
+      break
+    }
+  }
+
+  /// 高德相机回调缺失时的兜底，避免结束运动一直等待原生截图。
+  private func scheduleFinishSnapshotFallback() {
+    finishSnapshotFallbackWorkItem?.cancel()
+
+    let workItem = DispatchWorkItem { [weak self] in
+      self?.advanceFinishSnapshotStepIfNeeded()
+    }
+    finishSnapshotFallbackWorkItem = workItem
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2, execute: workItem)
+  }
+
+  private func finishFinishedRouteSnapshot() {
+    let completion = finishSnapshotCompletion
+    resetPendingFinishSnapshot()
+    completion?(buildRouteSnapshotBase64())
+  }
+
+  private func resetPendingFinishSnapshot() {
+    finishSnapshotFallbackWorkItem?.cancel()
+    finishSnapshotFallbackWorkItem = nil
+    finishSnapshotStep = nil
+    finishSnapshotCompletion = nil
   }
 
   /// 将当前地图画面导出为压缩图片，并编码成 Base64 字符串。
@@ -632,6 +692,7 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     if !wasUserAction {
       isProgrammaticCameraChange = false
     }
+    advanceFinishSnapshotStepIfNeeded()
   }
 
   /// 为运动中的当前位置点提供统一的蓝色圆点样式。

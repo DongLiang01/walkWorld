@@ -340,6 +340,7 @@ final class MotionNativeBridge: NSObject, FlutterStreamHandler {
     ])
   }
 
+    //运动结束
   private func handleStopWorkout(result: @escaping FlutterResult) {
     guard currentStatus == MotionStatusValue.running ||
             currentStatus == MotionStatusValue.paused else {
