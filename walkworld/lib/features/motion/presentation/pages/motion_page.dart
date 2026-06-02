@@ -167,6 +167,47 @@ class _MotionPageState extends ConsumerState<MotionPage> {
               ),
             ),
           ),
+
+          // 结束运动 loading 遮罩：截图 + 数据汇总期间展示
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: !motionState.isFinishing,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: motionState.isFinishing ? 1 : 0,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.45),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(
+                          width: 36,
+                          height: 36,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Text(
+                          '数据处理中…',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -186,11 +186,15 @@ class MotionController extends Notifier<MotionState> {
       return;
     }
 
+    // 立即标记正在结束，UI 层据此展示 loading 遮罩。
+    state = state.copyWith(isFinishing: true);
+
     try {
       final result = await _motionService.stopWorkout();
 
       if (!result.accepted) {
         _setError(code: 'stop_workout_rejected', message: '原生未接受结束运动命令。');
+        state = state.copyWith(isFinishing: false);
         return;
       }
 
@@ -208,6 +212,7 @@ class MotionController extends Notifier<MotionState> {
         ),
         sessionStartTime: normalizedSession.startTime,
         error: null,
+        isFinishing: false,
       );
     } catch (error) {
       _setError(
@@ -215,6 +220,7 @@ class MotionController extends Notifier<MotionState> {
         message: '结束运动失败。',
         detail: error.toString(),
       );
+      state = state.copyWith(isFinishing: false);
     }
   }
 

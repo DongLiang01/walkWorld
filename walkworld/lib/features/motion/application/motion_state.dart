@@ -20,6 +20,7 @@ class MotionState {
     this.sessionStartTime,
     this.locationServiceEnabled,
     this.motionType,
+    this.isFinishing = false,
   });
 
   /// 当前运动状态，是页面渲染和交互的核心依据。
@@ -52,6 +53,11 @@ class MotionState {
   /// 未开始运动时为 `null`。
   final MotionType? motionType;
 
+  /// 是否正在执行结束运动的异步流程（截图 + 数据汇总）。
+  ///
+  /// 为 `true` 时 UI 层应展示 loading 遮罩，防止用户重复操作。
+  final bool isFinishing;
+
   /// 默认初始状态。
   factory MotionState.initial() {
     return const MotionState(
@@ -75,6 +81,7 @@ class MotionState {
     Object? sessionStartTime = _unset,
     Object? locationServiceEnabled = _unset,
     Object? motionType = _unset,
+    bool? isFinishing,
   }) {
     return MotionState(
       status: status ?? this.status,
@@ -98,6 +105,7 @@ class MotionState {
       motionType: identical(motionType, _unset)
           ? this.motionType
           : motionType as MotionType?,
+      isFinishing: isFinishing ?? this.isFinishing,
     );
   }
 }

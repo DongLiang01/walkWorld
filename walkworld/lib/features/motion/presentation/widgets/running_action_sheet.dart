@@ -92,6 +92,7 @@ class RunningActionSheet extends ConsumerWidget {
             // 底部操作按钮
             _ActionsRow(
               isRunning: motionState.status == MotionStatus.running,
+              isFinishing: motionState.isFinishing,
               pageTokens: pageTokens,
               onPauseResume: motionState.status == MotionStatus.running
                   ? controller.pauseWorkout
@@ -225,12 +226,14 @@ class _MetricsRow extends StatelessWidget {
 class _ActionsRow extends StatelessWidget {
   const _ActionsRow({
     required this.isRunning,
+    required this.isFinishing,
     required this.pageTokens,
     required this.onPauseResume,
     required this.onStop,
   });
 
   final bool isRunning;
+  final bool isFinishing;
   final MotionPageTokens pageTokens;
   final VoidCallback onPauseResume;
   final VoidCallback onStop;
@@ -239,83 +242,91 @@ class _ActionsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 13),
-      child: Row(
-        children: [
-          // 暂停 / 继续按钮
-          Expanded(
-            child: _ActionButton(
-              onTap: onPauseResume,
-              backgroundColor: pageTokens.mutedActionBackground,
-              border: Border.all(
-                color: pageTokens.mutedActionBorder,
-                width: 0.65,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isRunning)
-                    AppSvgIcon(
-                      AppSvgAssets.motion('motion_action_pause'),
-                      color: pageTokens.mutedActionText,
-                      size: 11.7,
-                    )
-                  else
-                    CustomPaint(
-                      size: const Size(10, 11.7),
-                      painter: PlayTrianglePainter(
-                        color: pageTokens.mutedActionText,
+      // 结束运动中时降低透明度并禁用点击，防止重复操作。
+      child: IgnorePointer(
+        ignoring: isFinishing,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 180),
+          opacity: isFinishing ? 0.45 : 1,
+          child: Row(
+            children: [
+              // 暂停 / 继续按钮
+              Expanded(
+                child: _ActionButton(
+                  onTap: onPauseResume,
+                  backgroundColor: pageTokens.mutedActionBackground,
+                  border: Border.all(
+                    color: pageTokens.mutedActionBorder,
+                    width: 0.65,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isRunning)
+                        AppSvgIcon(
+                          AppSvgAssets.motion('motion_action_pause'),
+                          color: pageTokens.mutedActionText,
+                          size: 11.7,
+                        )
+                      else
+                        CustomPaint(
+                          size: const Size(10, 11.7),
+                          painter: PlayTrianglePainter(
+                            color: pageTokens.mutedActionText,
+                          ),
+                        ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isRunning ? '暂停' : '继续',
+                        style: TextStyle(
+                          color: pageTokens.mutedActionText,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                  const SizedBox(width: 4),
-                  Text(
-                    isRunning ? '暂停' : '继续',
-                    style: TextStyle(
-                      color: pageTokens.mutedActionText,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // 结束运动按钮
-          Expanded(
-            child: _ActionButton(
-              onTap: onStop,
-              backgroundColor: pageTokens.stopActionBackground,
-              boxShadow: [
-                BoxShadow(
-                  color: pageTokens.stopActionBackground.withValues(
-                    alpha: 0.45,
-                  ),
-                  blurRadius: 7.15,
-                  offset: const Offset(0, 3.9),
                 ),
-              ],
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppSvgIcon(
-                    'assets/icons/motion/motion_action_stop.svg',
-                    color: Colors.white,
-                    size: 10.4,
-                  ),
-                  SizedBox(width: 4),
-                  Text(
-                    '结束运动',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
               ),
-            ),
+              const SizedBox(width: 8),
+              // 结束运动按钮
+              Expanded(
+                child: _ActionButton(
+                  onTap: onStop,
+                  backgroundColor: pageTokens.stopActionBackground,
+                  boxShadow: [
+                    BoxShadow(
+                      color: pageTokens.stopActionBackground.withValues(
+                        alpha: 0.45,
+                      ),
+                      blurRadius: 7.15,
+                      offset: const Offset(0, 3.9),
+                    ),
+                  ],
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppSvgIcon(
+                        'assets/icons/motion/motion_action_stop.svg',
+                        color: Colors.white,
+                        size: 10.4,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        '结束运动',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
