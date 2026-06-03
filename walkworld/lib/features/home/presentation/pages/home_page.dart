@@ -5,6 +5,8 @@ import 'package:walkworld/app/svg/app_svg_assets.dart';
 import '../../../../app/svg/app_svg_icon.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
 import '../../../../main.dart';
+import '../../../profile/application/goal_route_provider.dart';
+import '../../../../app/utils/geo_utils.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 首页
@@ -112,13 +114,16 @@ class _HomeHeaderSection extends StatelessWidget {
 // 当前目标卡片
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _CurrentTargetCard extends StatelessWidget {
+class _CurrentTargetCard extends ConsumerWidget {
   const _CurrentTargetCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final textTheme = Theme.of(context).textTheme;
+    final route = ref.watch(goalRouteProvider);
+    final originCity = route.originCity.name;
+    final destinationCity = route.destinationCity.name;
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -139,7 +144,7 @@ class _CurrentTargetCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '北京 → 上海',
+                '$originCity → $destinationCity',
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: tokens.textPrimary,
@@ -180,14 +185,17 @@ class _CurrentTargetCard extends StatelessWidget {
 // 路线地图卡片
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _MapCard extends StatelessWidget {
+class _MapCard extends ConsumerWidget {
   const _MapCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    //获取出发地和目的地
+    final route = ref.watch(routeDistanceInfoProvider);
+    final distKmStr = route.distKmStr;
 
     return _HomeCard(
       // 地图卡片使用专属背景色 token
@@ -236,7 +244,7 @@ class _MapCard extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                '1318 km',
+                '$distKmStr km',
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: tokens.tabBarActive,
@@ -254,13 +262,20 @@ class _MapCard extends StatelessWidget {
 // 旅途进度卡片
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ProgressCard extends StatelessWidget {
+class _ProgressCard extends ConsumerWidget {
   const _ProgressCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final textTheme = Theme.of(context).textTheme;
+    //获取出发地和目的地
+    final route = ref.watch(routeDistanceInfoProvider);
+    final originCityName = route.originCityName;
+    final destinationCityName = route.destinationCityName;
+    final distKmStr = route.distKmStr;
+    final completedDistStr = route.completedDistStr;
+    final ratio = route.ratio;
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -280,7 +295,7 @@ class _ProgressCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '156.3 / 1318 km',
+                '$completedDistStr / $distKmStr km',
                 style: textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: tokens.tabBarActive,
@@ -299,7 +314,7 @@ class _ProgressCard extends StatelessWidget {
             ),
             alignment: Alignment.centerLeft,
             child: FractionallySizedBox(
-              widthFactor: 0.12,
+              widthFactor: ratio,
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -324,7 +339,7 @@ class _ProgressCard extends StatelessWidget {
                   _ProgressDot(color: tokens.tabBarActive),
                   const SizedBox(width: 4),
                   Text(
-                    '北京 起点',
+                    '$originCityName 起点',
                     style: textTheme.bodySmall?.copyWith(
                       color: tokens.textSecondary,
                       fontSize: 11,
@@ -336,7 +351,7 @@ class _ProgressCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '上海 终点',
+                    '$destinationCityName 终点',
                     style: textTheme.bodySmall?.copyWith(
                       color: tokens.textSecondary,
                       fontSize: 11,

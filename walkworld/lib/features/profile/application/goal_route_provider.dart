@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'city_data_provider.dart';
 import '../domain/city_model.dart';
+import '../../../../app/utils/geo_utils.dart';
 
 /// 目标路径状态载体
 class GoalRouteState {
@@ -93,3 +94,49 @@ final searchHistoryProvider =
     NotifierProvider<SearchHistoryNotifier, List<String>>(
       SearchHistoryNotifier.new,
     );
+
+/// 出发地和目的地之间的距离、进度信息载体
+class RouteDistanceInfo {
+  const RouteDistanceInfo({
+    required this.originCityName,
+    required this.destinationCityName,
+    required this.distKm,
+    required this.distKmStr,
+    required this.completedDist,
+    required this.completedDistStr,
+    required this.ratio,
+  });
+  //出发地城市名
+  final String originCityName; 
+  //目的地城市名
+  final String destinationCityName;  
+  //两地之间的直线距离
+  final double distKm;   
+  final String distKmStr; 
+  //已经完成的距离 
+  final double completedDist;
+  final String completedDistStr;
+  //已经完成的比例
+  final double ratio;
+}
+
+//出发地、目的地间距provider
+final routeDistanceInfoProvider = Provider<RouteDistanceInfo>((ref) {
+  final route = ref.watch(goalRouteProvider);
+  final distMeters = calcGeoDistance(
+    route.originCity.lat, route.originCity.lng,
+    route.destinationCity.lat, route.destinationCity.lng,
+  );
+  final distKm = distMeters / 1000.0;
+  final completedDist = 168.0;
+  final ratio = distKm == 0 ? 1.0 : completedDist / distKm;
+  return RouteDistanceInfo(
+    originCityName: route.originCity.name,
+    destinationCityName: route.destinationCity.name,
+    distKm: distKm,
+    distKmStr: distKm.toStringAsFixed(1),  //留1位小数
+    completedDist: completedDist,
+    completedDistStr: completedDist.toStringAsFixed(1),
+    ratio: ratio,
+  );
+});

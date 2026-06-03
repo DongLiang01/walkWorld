@@ -456,27 +456,11 @@ class _ProfileJourneySection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
-    final route = ref.watch(goalRouteProvider);
-
-    // 基于 Haversine 实时计算大圆地理距离，单位：米
-    final distMeters = calcGeoDistance(
-      route.originCity.lat,
-      route.originCity.lng,
-      route.destinationCity.lat,
-      route.destinationCity.lng,
-    );
-    final distKm = distMeters / 1000.0;
-
-    // 已完成里程，这里我们关联了用户历史以来的“累计距离”即 156.3 km
-    const completedDist = 156.3;
-
-    // 进度比例最低为 0，最大为 1.0
-    final progress = distKm > 0
-        ? (completedDist / distKm).clamp(0.0, 1.0)
-        : 0.0;
+    final route = ref.watch(routeDistanceInfoProvider);
+    final distKm = route.distKm;
+    final completedDist = route.completedDist;
+    final progress = route.ratio;
     final percent = (progress * 100).toInt();
-
-    // 剩余里程
     final remainingDist = distKm > completedDist ? distKm - completedDist : 0.0;
 
     return Container(
@@ -498,8 +482,8 @@ class _ProfileJourneySection extends ConsumerWidget {
           // 路线标题行（蓝点 + 路线 + 总里程）
           _JourneyRouteHeader(
             tokens: tokens,
-            originName: route.originCity.name,
-            destName: route.destinationCity.name,
+            originName: route.originCityName,
+            destName: route.destinationCityName,
             totalDistText: '共 ${distKm.toStringAsFixed(1)} km',
           ),
           const SizedBox(height: 16),

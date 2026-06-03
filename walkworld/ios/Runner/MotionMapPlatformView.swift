@@ -26,6 +26,8 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
         static let finishSnapshotCompressionQuality: CGFloat = 0.74
         /// 结束截图时，在自动拟合轨迹后额外缩小一个缩放级别，避免起终点过于贴近画面边缘。
         static let finishSnapshotZoomOutDelta: CGFloat = 1
+        /// 结束截图相机变化后的渲染稳定等待，避免长路线刚拟合完成就抢拍。
+        static let finishSnapshotRenderSettleDelay: TimeInterval = 0.45
     }
     
     //和flutter一侧对应的运动状态
@@ -46,7 +48,9 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
     
     private enum FinishSnapshotStep {
         case waitingForFit
+        case waitingForFitRenderSettle
         case waitingForZoomOut
+        case waitingForZoomOutRenderSettle
     }
     
     private enum MapAnnotationConfig {
@@ -509,8 +513,8 @@ extension MotionMapPlatformView {
     /// 为结束弹窗生成路线截图：
     /// 1. 视口缩放到完整轨迹
     /// 2. 临时切成“起 + 终 + 路线”的结束展示态
-    /// 3. 等待高德完成自动拟合后，再额外缩小一个缩放级别
-    /// 4. 导出压缩后的 Base64 图片给 Flutter
+    /// 3. 等待高德完成自动拟合和一帧稳定渲染后，再额外缩小一个缩放级别
+    /// 4. 缩小后再次等待稳定渲染，再导出压缩后的 Base64 图片给 Flutter
     func captureFinishedRouteSnapshot(completion: @escaping (String?) -> Void) {
         DispatchQueue.main.async { [weak self] in
             guard let self else {
@@ -625,23 +629,33 @@ extension MotionMapPlatformView {
         
         switch finishSnapshotStep {
         case .waitingForFit:
+            waitForFinishedRouteRenderSettle(nextStep: .waitingForFitRenderSettle)
+        case .waitingForFitRenderSettle:
             startFinishedRouteZoomOutIfNeeded()
         case .waitingForZoomOut:
+            waitForFinishedRouteRenderSettle(nextStep: .waitingForZoomOutRenderSettle)
+        case .waitingForZoomOutRenderSettle:
             finishFinishedRouteSnapshot()
         case nil:
             break
         }
     }
     
+    /// 等待地图在相机变化后完成当前帧渲染，再进入下一步，避免长路线截图过早。
+    private func waitForFinishedRouteRenderSettle(nextStep: FinishSnapshotStep) {
+        finishSnapshotStep = nextStep
+        scheduleFinishSnapshotFallback(delay: MapCameraConfig.finishSnapshotRenderSettleDelay)
+    }
+    
     /// 高德相机回调缺失时的兜底，避免结束运动一直等待原生截图。
-    private func scheduleFinishSnapshotFallback() {
+    private func scheduleFinishSnapshotFallback(delay: TimeInterval = 1.2) {
         finishSnapshotFallbackWorkItem?.cancel()
         
         let workItem = DispatchWorkItem { [weak self] in
             self?.advanceFinishSnapshotStepIfNeeded()
         }
         finishSnapshotFallbackWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
     }
     
     /// 执行最终截图并通过回调返回 Base64 结果。
