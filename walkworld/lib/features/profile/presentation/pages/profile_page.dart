@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/svg/svg.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
+import '../../../../app/utils/geo_utils.dart';
+import '../../application/goal_route_provider.dart';
+import 'city_select_page.dart';
 
 // ─── 页面级常量 ───────────────────────────────────────────────
 /// 卡片通用圆角
@@ -54,11 +58,11 @@ class _HistoryItem {
 // ─── 页面入口 ─────────────────────────────────────────────────
 
 /// "我的"页面
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
 
     return Scaffold(
@@ -89,12 +93,13 @@ class ProfilePage extends StatelessWidget {
 // ─── 当前目标区块 ──────────────────────────────────────────────
 
 /// 当前目标卡片（出发地 → 目的地）
-class _ProfileCurrentGoalSection extends StatelessWidget {
+class _ProfileCurrentGoalSection extends ConsumerWidget {
   const _ProfileCurrentGoalSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
+    final route = ref.watch(goalRouteProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -112,12 +117,23 @@ class _ProfileCurrentGoalSection extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           // 出发地行
-          _LocationRow(
-            iconBg: tokens.profileIconBgBlue,
-            iconBorder: tokens.profileIconBorderBlue,
-            iconAsset: AppSvgAssets.profile('origin_dot'),
-            label: '出发地',
-            location: '北京',
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CitySelectPage(isOrigin: true),
+                ),
+              );
+            },
+            behavior: HitTestBehavior.opaque,
+            child: _LocationRow(
+              iconBg: tokens.profileIconBgBlue,
+              iconBorder: tokens.profileIconBorderBlue,
+              iconAsset: AppSvgAssets.profile('origin_dot'),
+              label: '出发地',
+              location: route.originCity.name,
+            ),
           ),
           // 中间连接线 + 交换按钮
           Padding(
@@ -126,17 +142,31 @@ class _ProfileCurrentGoalSection extends StatelessWidget {
               children: [
                 _DottedLine(color: tokens.profileTextSecondary),
                 const SizedBox(width: 16),
-                _SwapButton(tokens: tokens),
+                GestureDetector(
+                  onTap: () => ref.read(goalRouteProvider.notifier).swapRoute(),
+                  child: _SwapButton(tokens: tokens),
+                ),
               ],
             ),
           ),
           // 目的地行
-          _LocationRow(
-            iconBg: tokens.profileIconBgOrange,
-            iconBorder: tokens.profileIconBorderOrange,
-            iconAsset: AppSvgAssets.profile('dest_flag'),
-            label: '目的地',
-            location: '上海',
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CitySelectPage(isOrigin: false),
+                ),
+              );
+            },
+            behavior: HitTestBehavior.opaque,
+            child: _LocationRow(
+              iconBg: tokens.profileIconBgOrange,
+              iconBorder: tokens.profileIconBorderOrange,
+              iconAsset: AppSvgAssets.profile('dest_flag'),
+              label: '目的地',
+              location: route.destinationCity.name,
+            ),
           ),
         ],
       ),
@@ -420,12 +450,34 @@ class _StatCard extends StatelessWidget {
 // ─── 我的旅程进度卡片 ──────────────────────────────────────────
 
 /// 旅程进度展示卡片
-class _ProfileJourneySection extends StatelessWidget {
+class _ProfileJourneySection extends ConsumerWidget {
   const _ProfileJourneySection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
+    final route = ref.watch(goalRouteProvider);
+
+    // 基于 Haversine 实时计算大圆地理距离，单位：米
+    final distMeters = calcGeoDistance(
+      route.originCity.lat,
+      route.originCity.lng,
+      route.destinationCity.lat,
+      route.destinationCity.lng,
+    );
+    final distKm = distMeters / 1000.0;
+
+    // 已完成里程，这里我们关联了用户历史以来的“累计距离”即 156.3 km
+    const completedDist = 156.3;
+
+    // 进度比例最低为 0，最大为 1.0
+    final progress = distKm > 0
+        ? (completedDist / distKm).clamp(0.0, 1.0)
+        : 0.0;
+    final percent = (progress * 100).toInt();
+
+    // 剩余里程
+    final remainingDist = distKm > completedDist ? distKm - completedDist : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -444,16 +496,25 @@ class _ProfileJourneySection extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           // 路线标题行（蓝点 + 路线 + 总里程）
-          _JourneyRouteHeader(tokens: tokens),
+          _JourneyRouteHeader(
+            tokens: tokens,
+            originName: route.originCity.name,
+            destName: route.destinationCity.name,
+            totalDistText: '共 ${distKm.toStringAsFixed(1)} km',
+          ),
           const SizedBox(height: 16),
           // 完成百分比
-          _JourneyPercentLabel(tokens: tokens),
+          _JourneyPercentLabel(tokens: tokens, percent: percent),
           const SizedBox(height: 8),
           // 进度条
-          _JourneyProgressBar(tokens: tokens, progress: 0.12),
+          _JourneyProgressBar(tokens: tokens, progress: progress),
           const SizedBox(height: 12),
           // 已完成 / 剩余里程
-          _JourneyDistRow(tokens: tokens),
+          _JourneyDistRow(
+            tokens: tokens,
+            completedDistText: completedDist.toStringAsFixed(1),
+            remainingDistText: remainingDist.toStringAsFixed(1),
+          ),
         ],
       ),
     );
@@ -462,9 +523,17 @@ class _ProfileJourneySection extends StatelessWidget {
 
 /// 旅程路线标题行（蓝点 + 路线名 + 总里程）
 class _JourneyRouteHeader extends StatelessWidget {
-  const _JourneyRouteHeader({required this.tokens});
+  const _JourneyRouteHeader({
+    required this.tokens,
+    required this.originName,
+    required this.destName,
+    required this.totalDistText,
+  });
 
   final AppThemeTokens tokens;
+  final String originName;
+  final String destName;
+  final String totalDistText;
 
   @override
   Widget build(BuildContext context) {
@@ -482,7 +551,7 @@ class _JourneyRouteHeader extends StatelessWidget {
         const SizedBox(width: 8),
         // 路线名
         Text(
-          '北京 → 上海',
+          '$originName → $destName',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
@@ -492,7 +561,7 @@ class _JourneyRouteHeader extends StatelessWidget {
         const Spacer(),
         // 总里程
         Text(
-          '共 1318 km',
+          totalDistText,
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w400,
@@ -506,9 +575,10 @@ class _JourneyRouteHeader extends StatelessWidget {
 
 /// 旅程完成百分比标签
 class _JourneyPercentLabel extends StatelessWidget {
-  const _JourneyPercentLabel({required this.tokens});
+  const _JourneyPercentLabel({required this.tokens, required this.percent});
 
   final AppThemeTokens tokens;
+  final int percent;
 
   @override
   Widget build(BuildContext context) {
@@ -517,7 +587,7 @@ class _JourneyPercentLabel extends StatelessWidget {
       textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
-          '12',
+          '$percent',
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.w800,
@@ -581,9 +651,15 @@ class _JourneyProgressBar extends StatelessWidget {
 
 /// 旅程"已完成 / 剩余"双列里程统计行
 class _JourneyDistRow extends StatelessWidget {
-  const _JourneyDistRow({required this.tokens});
+  const _JourneyDistRow({
+    required this.tokens,
+    required this.completedDistText,
+    required this.remainingDistText,
+  });
 
   final AppThemeTokens tokens;
+  final String completedDistText;
+  final String remainingDistText;
 
   @override
   Widget build(BuildContext context) {
@@ -594,7 +670,7 @@ class _JourneyDistRow extends StatelessWidget {
           child: _JourneyDistStat(
             tokens: tokens,
             label: '已完成',
-            value: '156.3',
+            value: completedDistText,
             alignment: CrossAxisAlignment.start,
             mainAlignment: MainAxisAlignment.start,
           ),
@@ -606,7 +682,7 @@ class _JourneyDistRow extends StatelessWidget {
           child: _JourneyDistStat(
             tokens: tokens,
             label: '剩余',
-            value: '1161.7',
+            value: remainingDistText,
             alignment: CrossAxisAlignment.end,
             mainAlignment: MainAxisAlignment.end,
           ),

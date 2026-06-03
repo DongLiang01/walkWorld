@@ -76,6 +76,11 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.profileProgressStart,
     required this.profileProgressEnd,
     required this.profileProgressBg,
+    required this.citySelectSearchBackground,
+    required this.citySelectHistoryBackground,
+    required this.citySelectCardBackground,
+    required this.citySelectHeaderBackground,
+    required this.citySelectSelectedBackground,
   });
 
   factory AppThemeTokens.resolve(Brightness brightness) {
@@ -211,6 +216,17 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       ),
       profileProgressEnd: AppColorTokens.profileProgressEnd.resolve(brightness),
       profileProgressBg: AppColorTokens.profileProgressBg.resolve(brightness),
+      citySelectSearchBackground: AppColorTokens.citySelectSearchBackground
+          .resolve(brightness),
+      citySelectHistoryBackground: AppColorTokens.citySelectHistoryBackground
+          .resolve(brightness),
+      citySelectCardBackground: AppColorTokens.citySelectCardBackground.resolve(
+        brightness,
+      ),
+      citySelectHeaderBackground: AppColorTokens.citySelectHeaderBackground
+          .resolve(brightness),
+      citySelectSelectedBackground: AppColorTokens.citySelectSelectedBackground
+          .resolve(brightness),
     );
   }
 
@@ -424,6 +440,21 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   /// profileProgressBg
   final Color profileProgressBg;
 
+  /// 城市选择模糊搜索框的背景色
+  final Color citySelectSearchBackground;
+
+  /// 城市选择搜索/历史记录标签的背景色
+  final Color citySelectHistoryBackground;
+
+  /// 城市选择拼音分组卡片列表容器的背景色
+  final Color citySelectCardBackground;
+
+  /// 城市选择拼音首字母分组标题栏的背景色
+  final Color citySelectHeaderBackground;
+
+  /// 城市选择已选中项目的背景高亮色
+  final Color citySelectSelectedBackground;
+
   @override
   AppThemeTokens copyWith({
     Color? brandPrimary,
@@ -496,6 +527,11 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? profileProgressStart,
     Color? profileProgressEnd,
     Color? profileProgressBg,
+    Color? citySelectSearchBackground,
+    Color? citySelectHistoryBackground,
+    Color? citySelectCardBackground,
+    Color? citySelectHeaderBackground,
+    Color? citySelectSelectedBackground,
   }) {
     return AppThemeTokens(
       brandPrimary: brandPrimary ?? this.brandPrimary,
@@ -595,6 +631,16 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       profileProgressStart: profileProgressStart ?? this.profileProgressStart,
       profileProgressEnd: profileProgressEnd ?? this.profileProgressEnd,
       profileProgressBg: profileProgressBg ?? this.profileProgressBg,
+      citySelectSearchBackground:
+          citySelectSearchBackground ?? this.citySelectSearchBackground,
+      citySelectHistoryBackground:
+          citySelectHistoryBackground ?? this.citySelectHistoryBackground,
+      citySelectCardBackground:
+          citySelectCardBackground ?? this.citySelectCardBackground,
+      citySelectHeaderBackground:
+          citySelectHeaderBackground ?? this.citySelectHeaderBackground,
+      citySelectSelectedBackground:
+          citySelectSelectedBackground ?? this.citySelectSelectedBackground,
     );
   }
 
@@ -838,11 +884,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
           Color.lerp(profileIconBgGreen, other.profileIconBgGreen, t) ??
           profileIconBgGreen,
       profileIconBorderGreen:
-          Color.lerp(
-            profileIconBorderGreen,
-            other.profileIconBorderGreen,
-            t,
-          ) ??
+          Color.lerp(profileIconBorderGreen, other.profileIconBorderGreen, t) ??
           profileIconBorderGreen,
       profileProgressStart:
           Color.lerp(profileProgressStart, other.profileProgressStart, t) ??
@@ -853,6 +895,41 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       profileProgressBg:
           Color.lerp(profileProgressBg, other.profileProgressBg, t) ??
           profileProgressBg,
+      citySelectSearchBackground:
+          Color.lerp(
+            citySelectSearchBackground,
+            other.citySelectSearchBackground,
+            t,
+          ) ??
+          citySelectSearchBackground,
+      citySelectHistoryBackground:
+          Color.lerp(
+            citySelectHistoryBackground,
+            other.citySelectHistoryBackground,
+            t,
+          ) ??
+          citySelectHistoryBackground,
+      citySelectCardBackground:
+          Color.lerp(
+            citySelectCardBackground,
+            other.citySelectCardBackground,
+            t,
+          ) ??
+          citySelectCardBackground,
+      citySelectHeaderBackground:
+          Color.lerp(
+            citySelectHeaderBackground,
+            other.citySelectHeaderBackground,
+            t,
+          ) ??
+          citySelectHeaderBackground,
+      citySelectSelectedBackground:
+          Color.lerp(
+            citySelectSelectedBackground,
+            other.citySelectSelectedBackground,
+            t,
+          ) ??
+          citySelectSelectedBackground,
     );
   }
 }

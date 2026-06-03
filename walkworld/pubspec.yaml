@@ -15,6 +15,7 @@ dependencies:
   flutter_svg: ^2.2.0
   #Flutter 的 iOS 风格图标库
   cupertino_icons: ^1.0.8  
+  lpinyin: ^2.0.3
 
 dev_dependencies:
   flutter_test:
@@ -30,3 +31,5 @@ flutter:
     - assets/icons/motion/
     - assets/icons/profile/
     - assets/icons/home/
+    - assets/icons/common/
+    - assets/datas/

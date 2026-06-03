@@ -22,22 +22,22 @@ enum MotionStatus {
 extension MotionStatusX on MotionStatus {
   /// 将枚举值转换为 Flutter 与 iOS 通信使用的字符串。
   String get value => switch (this) {
-        MotionStatus.idle => 'idle',
-        MotionStatus.preparing => 'preparing',
-        MotionStatus.running => 'running',
-        MotionStatus.paused => 'paused',
-        MotionStatus.finished => 'finished',
-        MotionStatus.error => 'error',
-      };
+    MotionStatus.idle => 'idle',
+    MotionStatus.preparing => 'preparing',
+    MotionStatus.running => 'running',
+    MotionStatus.paused => 'paused',
+    MotionStatus.finished => 'finished',
+    MotionStatus.error => 'error',
+  };
 
   /// 从原生通道返回的字符串恢复为状态枚举。
   static MotionStatus fromValue(String value) => switch (value) {
-        'idle' => MotionStatus.idle,
-        'preparing' => MotionStatus.preparing,
-        'running' => MotionStatus.running,
-        'paused' => MotionStatus.paused,
-        'finished' => MotionStatus.finished,
-        'error' => MotionStatus.error,
-        _ => MotionStatus.error,
-      };
+    'idle' => MotionStatus.idle,
+    'preparing' => MotionStatus.preparing,
+    'running' => MotionStatus.running,
+    'paused' => MotionStatus.paused,
+    'finished' => MotionStatus.finished,
+    'error' => MotionStatus.error,
+    _ => MotionStatus.error,
+  };
 }

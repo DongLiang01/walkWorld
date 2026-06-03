@@ -38,10 +38,10 @@ class MethodChannelMotionService implements MotionService {
   MethodChannelMotionService({
     MethodChannel? methodChannel,
     EventChannel? eventChannel,
-  })  : _methodChannel =
-            methodChannel ?? const MethodChannel(MotionChannelNames.method),
-        _eventChannel =
-            eventChannel ?? const EventChannel(MotionChannelNames.event);
+  }) : _methodChannel =
+           methodChannel ?? const MethodChannel(MotionChannelNames.method),
+       _eventChannel =
+           eventChannel ?? const EventChannel(MotionChannelNames.event);
 
   final MethodChannel _methodChannel;
   final EventChannel _eventChannel;
@@ -50,11 +50,12 @@ class MethodChannelMotionService implements MotionService {
 
   @override
   Stream<MotionChannelEvent> get events {
-    return _events ??=
-        _eventChannel.receiveBroadcastStream().map<MotionChannelEvent>((event) {
-      final eventMap = event as Map<Object?, Object?>? ?? const {};
-      return MotionChannelEvent.fromMap(eventMap);
-    });
+    return _events ??= _eventChannel
+        .receiveBroadcastStream()
+        .map<MotionChannelEvent>((event) {
+          final eventMap = event as Map<Object?, Object?>? ?? const {};
+          return MotionChannelEvent.fromMap(eventMap);
+        });
   }
 
   @override

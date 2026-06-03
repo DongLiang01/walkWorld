@@ -1,10 +1,6 @@
 /// 表示运动模块中的原生错误或流程错误。
 class MotionError {
-  const MotionError({
-    required this.code,
-    required this.message,
-    this.detail,
-  });
+  const MotionError({required this.code, required this.message, this.detail});
 
   /// 稳定的错误码，用于界面处理和问题排查。
   final String code;
@@ -15,11 +11,7 @@ class MotionError {
   /// 原生侧返回的附加错误信息，可选。
   final String? detail;
 
-  MotionError copyWith({
-    String? code,
-    String? message,
-    String? detail,
-  }) {
+  MotionError copyWith({String? code, String? message, String? detail}) {
     return MotionError(
       code: code ?? this.code,
       message: message ?? this.message,
@@ -28,11 +20,7 @@ class MotionError {
   }
 
   Map<String, Object?> toMap() {
-    return {
-      'code': code,
-      'message': message,
-      'detail': detail,
-    };
+    return {'code': code, 'message': message, 'detail': detail};
   }
 
   factory MotionError.fromMap(Map<Object?, Object?> map) {

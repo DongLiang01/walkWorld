@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/presentation/pages/app_shell_page.dart';
 import 'app/theme/app_theme.dart';
+import 'features/profile/application/city_data_provider.dart';
 
 /// 应用主题模式。
 ///
@@ -22,9 +23,21 @@ class ThemeModeController extends Notifier<ThemeMode> {
   }
 }
 
-/// Riverpod 入口，ProviderScope 开启 Riverpod 状态管理，child 是根 widget
-void main() {
-  runApp(const ProviderScope(child: MyApp()));
+/// Riverpod 入口，启动时预热城市数据并开启全局状态容器
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final providerContainer = ProviderContainer();
+  //app启动前先解析好城市数据
+  await providerContainer.read(citiesProvider.future);
+  await providerContainer.read(groupedCitiesProvider.future);
+
+  runApp(
+    UncontrolledProviderScope(
+      container: providerContainer,
+      child: const MyApp(),
+    ),
+  );
 }
 
 /// ConsumerWidget = 能消费 provider 的 Widget

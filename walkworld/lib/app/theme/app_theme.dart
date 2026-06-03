@@ -51,13 +51,12 @@ class AppTheme {
           side: BorderSide(color: tokens.borderPrimary),
         ),
       ),
-      textTheme: ThemeData(
-        brightness: brightness,
-        colorScheme: colorScheme,
-      ).textTheme.apply(
-        bodyColor: tokens.textPrimary,
-        displayColor: tokens.textPrimary,
-      ),
+      textTheme: ThemeData(brightness: brightness, colorScheme: colorScheme)
+          .textTheme
+          .apply(
+            bodyColor: tokens.textPrimary,
+            displayColor: tokens.textPrimary,
+          ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: tokens.brandPrimary,
@@ -71,9 +70,7 @@ class AppTheme {
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          foregroundColor: tokens.brandPrimary,
-        ),
+        style: TextButton.styleFrom(foregroundColor: tokens.brandPrimary),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: tokens.surfaceSecondary,
@@ -85,9 +82,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
         brightness: brightness,
       ),
-      iconTheme: IconThemeData(
-        color: tokens.textPrimary,
-      ),
+      iconTheme: IconThemeData(color: tokens.textPrimary),
       listTileTheme: ListTileThemeData(
         iconColor: tokens.textPrimary,
         textColor: tokens.textPrimary,

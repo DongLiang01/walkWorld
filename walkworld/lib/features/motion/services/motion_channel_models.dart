@@ -3,10 +3,7 @@ import 'motion_channel_protocol.dart';
 
 /// 表示原生推送给 Flutter 的统一事件结构。
 class MotionChannelEvent {
-  const MotionChannelEvent({
-    required this.type,
-    required this.payload,
-  });
+  const MotionChannelEvent({required this.type, required this.payload});
 
   /// 事件类型。
   final MotionChannelEventType type;
@@ -35,10 +32,7 @@ class MotionChannelEvent {
 
 /// 定位权限请求结果。
 class MotionPermissionResult {
-  const MotionPermissionResult({
-    required this.granted,
-    required this.status,
-  });
+  const MotionPermissionResult({required this.granted, required this.status});
 
   /// 当前是否已获得可用定位权限。
   final bool granted;
@@ -56,9 +50,7 @@ class MotionPermissionResult {
 
 /// 系统定位服务开关状态。
 class MotionLocationServiceStatus {
-  const MotionLocationServiceStatus({
-    required this.enabled,
-  });
+  const MotionLocationServiceStatus({required this.enabled});
 
   /// 系统级定位服务是否开启。
   final bool enabled;

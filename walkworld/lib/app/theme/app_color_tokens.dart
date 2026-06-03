@@ -7,7 +7,7 @@ class AppColorTokens {
   const AppColorTokens._();
 
   static const brandPrimary = DltDynamicColor(
-    light: Color(0xFF356578),
+    light: Color(0xFF112FC1),
     dark: Color(0xFFDF7F55),
   );
 
@@ -354,5 +354,30 @@ class AppColorTokens {
   static const profileProgressBg = DltDynamicColor(
     light: Color(0xFFE5EBF5),
     dark: Color(0x1AFFFFFF),
+  );
+
+  static const citySelectSearchBackground = DltDynamicColor(
+    light: Color(0xFFF5F7FA),
+    dark: Color(0xFF0D1626),
+  );
+
+  static const citySelectHistoryBackground = DltDynamicColor(
+    light: Color(0xFFEEF2F8),
+    dark: Color(0x0FFFFFFF),
+  );
+
+  static const citySelectCardBackground = DltDynamicColor(
+    light: Color(0xFFFFFFFF),
+    dark: Color(0xFF121C30),
+  );
+
+  static const citySelectHeaderBackground = DltDynamicColor(
+    light: Color(0xFFEEF2F8),
+    dark: Color(0xFF0D1626),
+  );
+
+  static const citySelectSelectedBackground = DltDynamicColor(
+    light: Color(0x141A6FDB),
+    dark: Color(0x1400D4FF),
   );
 }
