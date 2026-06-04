@@ -1,6 +1,5 @@
 import '../models/models.dart';
 import '../services/motion_channel_protocol.dart';
-import '../presentation/widgets/motion_type_sheet.dart';
 
 /// 用于标记 `copyWith` 中“调用方没有传这个字段”的哨兵值。
 const _unset = Object();

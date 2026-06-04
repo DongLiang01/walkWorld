@@ -16,6 +16,8 @@ dependencies:
   #Flutter 的 iOS 风格图标库
   cupertino_icons: ^1.0.8  
   lpinyin: ^2.0.3
+  sqflite: ^2.4.2+1
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

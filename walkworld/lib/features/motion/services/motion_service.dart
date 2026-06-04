@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-import '../presentation/widgets/motion_type_sheet.dart';
+import '../models/models.dart';
 import 'motion_channel_models.dart';
 import 'motion_channel_protocol.dart';
 

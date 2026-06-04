@@ -6,7 +6,6 @@ import '../../../../app/svg/app_svg_icon.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
 import '../../../../main.dart';
 import '../../../profile/application/goal_route_provider.dart';
-import '../../../../app/utils/geo_utils.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 首页

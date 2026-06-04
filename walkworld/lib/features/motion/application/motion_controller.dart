@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/models.dart';
-import '../presentation/widgets/motion_type_sheet.dart';
 import '../services/services.dart';
+import 'motion_history_provider.dart';
 import 'motion_service_provider.dart';
 import 'motion_state.dart';
 
@@ -199,6 +199,7 @@ class MotionController extends Notifier<MotionState> {
       }
 
       final normalizedSession = _normalizeFinishedSession(result.summary);
+      final saveError = await _saveFinishedSession(normalizedSession);
 
       state = state.copyWith(
         status: result.status,
@@ -211,7 +212,7 @@ class MotionController extends Notifier<MotionState> {
           averageSpeedMps: normalizedSession.averageSpeedMps,
         ),
         sessionStartTime: normalizedSession.startTime,
-        error: null,
+        error: saveError,
         isFinishing: false,
       );
     } catch (error) {
@@ -305,13 +306,29 @@ class MotionController extends Notifier<MotionState> {
 
     return session.copyWith(
       sessionId: fallbackSessionId,
+      motionType: state.motionType,
       startTime: fallbackStartTime,
       endTime: fallbackEndTime,
       durationSeconds: fallbackDurationSeconds,
       totalDistanceMeters: fallbackDistanceMeters,
       averageSpeedMps: fallbackAverageSpeed,
+      routeBounds: MotionRouteBounds.fromPoints(session.points),
       points: session.points,
     );
+  }
+
+  Future<MotionError?> _saveFinishedSession(MotionSession session) async {
+    try {
+      await ref.read(motionHistoryRepositoryProvider).saveSession(session);
+      ref.invalidate(latestMotionSessionsProvider);
+      return null;
+    } catch (error) {
+      return MotionError(
+        code: 'motion_history_save_failed',
+        message: '保存运动记录失败。',
+        detail: error.toString(),
+      );
+    }
   }
 
   /// 生成本次运动会话的本地唯一标识。

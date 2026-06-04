@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/svg/svg.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
-import '../../../../app/utils/geo_utils.dart';
+import '../../../motion/application/motion_history_provider.dart';
+import '../../../motion/models/models.dart';
 import '../../application/goal_route_provider.dart';
 import 'city_select_page.dart';
 
@@ -37,6 +38,7 @@ BoxDecoration _profileCardDecoration(AppThemeTokens tokens) {
 // ─── 历史记录数据模型（仅页面内使用）────────────────────────────
 class _HistoryItem {
   const _HistoryItem({
+    required this.sessionId,
     required this.iconAsset,
     required this.iconBgColor,
     required this.iconBorderColor,
@@ -46,6 +48,7 @@ class _HistoryItem {
     required this.distance,
   });
 
+  final String sessionId;
   final String iconAsset;
   final Color iconBgColor;
   final Color iconBorderColor;
@@ -738,43 +741,13 @@ class _JourneyDistStat extends StatelessWidget {
 // ─── 历史记录区块 ──────────────────────────────────────────────
 
 /// 历史记录列表区块
-class _ProfileHistorySection extends StatelessWidget {
+class _ProfileHistorySection extends ConsumerWidget {
   const _ProfileHistorySection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
-
-    // 历史数据列表（后续接入真实数据源时替换此处）
-    final items = [
-      _HistoryItem(
-        iconAsset: AppSvgAssets.profile('history_running'),
-        iconBgColor: tokens.profileIconBgBlue,
-        iconBorderColor: tokens.profileIconBorderBlue,
-        type: '跑步',
-        date: '今天 14:30',
-        duration: '32 分钟',
-        distance: '5.2',
-      ),
-      _HistoryItem(
-        iconAsset: AppSvgAssets.profile('history_hiking'),
-        iconBgColor: tokens.profileIconBgGreen,
-        iconBorderColor: tokens.profileIconBorderGreen,
-        type: '徒步',
-        date: '昨天 09:15',
-        duration: '108 分钟',
-        distance: '8.4',
-      ),
-      _HistoryItem(
-        iconAsset: AppSvgAssets.profile('history_cycling'),
-        iconBgColor: tokens.profileIconBgPurple,
-        iconBorderColor: tokens.profileIconBorderPurple,
-        type: '骑行',
-        date: '12月3日 07:50',
-        duration: '58 分钟',
-        distance: '18.6',
-      ),
-    ];
+    final historyAsync = ref.watch(latestMotionSessionsProvider);
 
     return Column(
       children: [
@@ -801,12 +774,142 @@ class _ProfileHistorySection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 12),
-        // 历史条目列表（数据驱动）
-        for (int i = 0; i < items.length; i++) ...[
-          if (i > 0) const SizedBox(height: _kHistoryItemGap),
-          _HistoryCard(item: items[i]),
-        ],
+        historyAsync.when(
+          data: (sessions) {
+            if (sessions.isEmpty) {
+              return _HistoryEmptyCard(tokens: tokens);
+            }
+
+            final items = sessions
+                .map((session) => _historyItemFromSession(session, tokens))
+                .toList(growable: false);
+
+            return Column(
+              children: [
+                for (int i = 0; i < items.length; i++) ...[
+                  if (i > 0) const SizedBox(height: _kHistoryItemGap),
+                  _HistoryCard(item: items[i]),
+                ],
+              ],
+            );
+          },
+          loading: () => _HistoryStatusCard(tokens: tokens, text: '历史记录加载中…'),
+          error: (_, _) => _HistoryStatusCard(tokens: tokens, text: '历史记录加载失败'),
+        ),
       ],
+    );
+  }
+
+  _HistoryItem _historyItemFromSession(
+    MotionSession session,
+    AppThemeTokens tokens,
+  ) {
+    final motionType = session.motionType ?? MotionType.hiking;
+
+    return _HistoryItem(
+      sessionId: session.sessionId,
+      iconAsset: _historyIconAsset(motionType),
+      iconBgColor: _historyIconBackground(motionType, tokens),
+      iconBorderColor: _historyIconBorder(motionType, tokens),
+      type: motionType.label,
+      date: _formatHistoryDate(session.endTime),
+      duration: _formatHistoryDuration(session.durationSeconds),
+      distance: (session.totalDistanceMeters / 1000).toStringAsFixed(2),
+    );
+  }
+
+  String _historyIconAsset(MotionType motionType) {
+    return switch (motionType) {
+      MotionType.hiking => AppSvgAssets.profile('history_hiking'),
+      MotionType.running => AppSvgAssets.profile('history_running'),
+      MotionType.cycling => AppSvgAssets.profile('history_cycling'),
+    };
+  }
+
+  Color _historyIconBackground(MotionType motionType, AppThemeTokens tokens) {
+    return switch (motionType) {
+      MotionType.hiking => tokens.profileIconBgGreen,
+      MotionType.running => tokens.profileIconBgBlue,
+      MotionType.cycling => tokens.profileIconBgPurple,
+    };
+  }
+
+  Color _historyIconBorder(MotionType motionType, AppThemeTokens tokens) {
+    return switch (motionType) {
+      MotionType.hiking => tokens.profileIconBorderGreen,
+      MotionType.running => tokens.profileIconBorderBlue,
+      MotionType.cycling => tokens.profileIconBorderPurple,
+    };
+  }
+
+  String _formatHistoryDuration(int durationSeconds) {
+    final totalMinutes = (durationSeconds / 60).round();
+    if (totalMinutes < 60) {
+      return '$totalMinutes 分钟';
+    }
+
+    final hours = totalMinutes ~/ 60;
+    final minutes = totalMinutes % 60;
+    if (minutes == 0) {
+      return '$hours 小时';
+    }
+    return '$hours 小时 $minutes 分钟';
+  }
+
+  String _formatHistoryDate(int timestamp) {
+    if (timestamp <= 0) {
+      return '--';
+    }
+
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final recordDay = DateTime(date.year, date.month, date.day);
+    final timeText =
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+
+    if (recordDay == today) {
+      return '今天 $timeText';
+    }
+    if (recordDay == today.subtract(const Duration(days: 1))) {
+      return '昨天 $timeText';
+    }
+    return '${date.month}月${date.day}日 $timeText';
+  }
+}
+
+class _HistoryEmptyCard extends StatelessWidget {
+  const _HistoryEmptyCard({required this.tokens});
+
+  final AppThemeTokens tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    return _HistoryStatusCard(tokens: tokens, text: '暂无运动记录');
+  }
+}
+
+class _HistoryStatusCard extends StatelessWidget {
+  const _HistoryStatusCard({required this.tokens, required this.text});
+
+  final AppThemeTokens tokens;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      decoration: _profileCardDecoration(tokens),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: tokens.profileTextSecondary,
+        ),
+      ),
     );
   }
 }

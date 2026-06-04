@@ -4,9 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/svg/svg.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
 import '../../application/application.dart';
-import '../../models/motion_status.dart';
+import '../../models/models.dart';
 import 'motion_page_support.dart';
-import 'motion_type_sheet.dart';
 
 /// 弹出运动中面板。
 Future<void> showRunningActionSheet(
