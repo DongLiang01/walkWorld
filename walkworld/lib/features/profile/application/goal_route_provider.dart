@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../motion/application/motion_history_provider.dart';
 import 'city_data_provider.dart';
 import '../domain/city_model.dart';
 import '../../../../app/utils/geo_utils.dart';
@@ -6,8 +7,8 @@ import '../../../../app/utils/geo_utils.dart';
 /// 目标路径状态载体
 class GoalRouteState {
   const GoalRouteState({
-    required this.originCity,   //出发地
-    required this.destinationCity,  //目的地
+    required this.originCity, //出发地
+    required this.destinationCity, //目的地
   });
 
   final City originCity;
@@ -105,38 +106,92 @@ class RouteDistanceInfo {
     required this.completedDist,
     required this.completedDistStr,
     required this.ratio,
+    required this.totalDistanceMeters,
+    required this.monthlyDistanceKm,
+    required this.monthlyDistanceKmStr,
+    required this.monthlySessionCount,
+    required this.weeklyDistanceKm,
+    required this.weeklyDistanceKmStr,
+    required this.weeklyDurationSeconds,
+    required this.weeklyDurationHoursStr,
+    required this.weeklySessionCount,
+    required this.currentStreakDays,
+    required this.longestStreakDays,
   });
   //出发地城市名
-  final String originCityName; 
+  final String originCityName;
   //目的地城市名
-  final String destinationCityName;  
+  final String destinationCityName;
   //两地之间的直线距离
-  final double distKm;   
-  final String distKmStr; 
-  //已经完成的距离 
+  final double distKm;
+  final String distKmStr;
+  //历史累计运动距离，单位公里
   final double completedDist;
   final String completedDistStr;
   //已经完成的比例
   final double ratio;
+  //历史累计运动距离，单位米
+  final double totalDistanceMeters;
+  //本月累计运动距离，单位公里
+  final double monthlyDistanceKm;
+  //本月累计运动距离展示文案，保留1位小数
+  final String monthlyDistanceKmStr;
+  //本月运动次数
+  final int monthlySessionCount;
+  //本周累计运动距离，单位公里
+  final double weeklyDistanceKm;
+  //本周累计运动距离展示文案，保留1位小数
+  final String weeklyDistanceKmStr;
+  //本周累计运动时长，单位秒
+  final int weeklyDurationSeconds;
+  //本周累计运动时长展示文案，单位小时，保留1位小数
+  final String weeklyDurationHoursStr;
+  //本周运动次数
+  final int weeklySessionCount;
+  //当前连续运动天数
+  final int currentStreakDays;
+  //历史最大连续运动天数
+  final int longestStreakDays;
 }
 
 //出发地、目的地间距provider
-final routeDistanceInfoProvider = Provider<RouteDistanceInfo>((ref) {
+final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
+  ref,
+) async {
   final route = ref.watch(goalRouteProvider);
+  final motionStats = await ref.watch(motionHistoryStatsProvider.future);
   final distMeters = calcGeoDistance(
-    route.originCity.lat, route.originCity.lng,
-    route.destinationCity.lat, route.destinationCity.lng,
+    route.originCity.lat,
+    route.originCity.lng,
+    route.destinationCity.lat,
+    route.destinationCity.lng,
   );
   final distKm = distMeters / 1000.0;
-  final completedDist = 168.0;
-  final ratio = distKm == 0 ? 1.0 : completedDist / distKm;
+  final completedDist = motionStats.totalDistanceMeters / 1000.0;
+  final ratio = distKm == 0
+      ? 1.0
+      : (completedDist / distKm).clamp(0.0, 1.0).toDouble(); //clamp是把值限定在0和1之间
+  final monthlyDistanceKm = motionStats.monthlyDistanceMeters / 1000.0;
+  final weeklyDistanceKm = motionStats.weeklyDistanceMeters / 1000.0;
+  final weeklyDurationHours = motionStats.weeklyDurationSeconds / 3600.0;
   return RouteDistanceInfo(
     originCityName: route.originCity.name,
     destinationCityName: route.destinationCity.name,
     distKm: distKm,
-    distKmStr: distKm.toStringAsFixed(1),  //留1位小数
+    distKmStr: distKm.toStringAsFixed(1), //留1位小数
     completedDist: completedDist,
     completedDistStr: completedDist.toStringAsFixed(1),
     ratio: ratio,
+    totalDistanceMeters: motionStats.totalDistanceMeters,
+    monthlyDistanceKm: monthlyDistanceKm,
+    monthlyDistanceKmStr: monthlyDistanceKm.toStringAsFixed(1),
+    monthlySessionCount: motionStats.monthlySessionCount,
+    weeklyDistanceKm: weeklyDistanceKm,
+    weeklyDistanceKmStr: weeklyDistanceKm.toStringAsFixed(1),
+    weeklyDurationSeconds: motionStats.weeklyDurationSeconds,
+    weeklyDurationHoursStr: weeklyDurationHours.toStringAsFixed(1),
+    weeklySessionCount: motionStats.weeklySessionCount,
+    currentStreakDays: motionStats.currentStreakDays,
+    longestStreakDays: motionStats.longestStreakDays,
   );
 });

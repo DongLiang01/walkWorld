@@ -304,12 +304,13 @@ class _SwapButton extends StatelessWidget {
 // ─── 统计数据卡片组 ────────────────────────────────────────────
 
 /// 三格统计数据卡片行
-class _ProfileStatsSection extends StatelessWidget {
+class _ProfileStatsSection extends ConsumerWidget {
   const _ProfileStatsSection();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
+    final route = ref.watch(routeDistanceInfoProvider).asData?.value;
 
     return Row(
       children: [
@@ -319,9 +320,9 @@ class _ProfileStatsSection extends StatelessWidget {
             iconBg: tokens.profileIconBgOrange,
             iconBorder: tokens.profileIconBorderOrange,
             title: '连续运动',
-            value: '23',
+            value: '${route?.currentStreakDays ?? 0}',
             unit: '天',
-            subtitle: '最佳记录',
+            subtitle: '最佳 ${route?.longestStreakDays ?? 0} 天',
             subtitleColor: tokens.profileTextSecondary,
           ),
         ),
@@ -332,7 +333,7 @@ class _ProfileStatsSection extends StatelessWidget {
             iconBg: tokens.profileIconBgBlue,
             iconBorder: tokens.profileIconBorderBlue,
             title: '累计距离',
-            value: '156.3',
+            value: route?.completedDistStr ?? '0.0',
             unit: 'km',
             subtitle: '↑ +18%',
             subtitleColor: tokens.profileAccentBlue,
@@ -345,7 +346,7 @@ class _ProfileStatsSection extends StatelessWidget {
             iconBg: tokens.profileIconBgPurple,
             iconBorder: tokens.profileIconBorderPurple,
             title: '本月次数',
-            value: '18',
+            value: '${route?.monthlySessionCount ?? 0}',
             unit: '次',
             subtitle: '目标 20 次',
             subtitleColor: tokens.profileAccentPurple,
@@ -459,10 +460,11 @@ class _ProfileJourneySection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
-    final route = ref.watch(routeDistanceInfoProvider);
-    final distKm = route.distKm;
-    final completedDist = route.completedDist;
-    final progress = route.ratio;
+    final route = ref.watch(routeDistanceInfoProvider).asData?.value;
+    final goalRoute = ref.watch(goalRouteProvider);
+    final distKm = route?.distKm ?? 0.0;
+    final completedDist = route?.completedDist ?? 0.0;
+    final progress = route?.ratio ?? 0.0;
     final percent = (progress * 100).toInt();
     final remainingDist = distKm > completedDist ? distKm - completedDist : 0.0;
 
@@ -485,8 +487,9 @@ class _ProfileJourneySection extends ConsumerWidget {
           // 路线标题行（蓝点 + 路线 + 总里程）
           _JourneyRouteHeader(
             tokens: tokens,
-            originName: route.originCityName,
-            destName: route.destinationCityName,
+            originName: route?.originCityName ?? goalRoute.originCity.name,
+            destName:
+                route?.destinationCityName ?? goalRoute.destinationCity.name,
             totalDistText: '共 ${distKm.toStringAsFixed(1)} km',
           ),
           const SizedBox(height: 16),

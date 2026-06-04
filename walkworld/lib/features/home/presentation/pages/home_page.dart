@@ -124,8 +124,8 @@ class _CurrentTargetCard extends ConsumerWidget {
     final originCity = route.originCity.name;
     final destinationCity = route.destinationCity.name;
     //获取出发地和目的地
-    final distanceRoute = ref.watch(routeDistanceInfoProvider);
-    final percent = (distanceRoute.ratio * 100).toInt();
+    final distanceRoute = ref.watch(routeDistanceInfoProvider).asData?.value;
+    final percent = ((distanceRoute?.ratio ?? 0) * 100).toInt();
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -196,8 +196,8 @@ class _MapCard extends ConsumerWidget {
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     //获取出发地和目的地
-    final route = ref.watch(routeDistanceInfoProvider);
-    final distKmStr = route.distKmStr;
+    final route = ref.watch(routeDistanceInfoProvider).asData?.value;
+    final distKmStr = route?.distKmStr ?? '0.0';
 
     return _HomeCard(
       // 地图卡片使用专属背景色 token
@@ -272,12 +272,14 @@ class _ProgressCard extends ConsumerWidget {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final textTheme = Theme.of(context).textTheme;
     //获取出发地和目的地
-    final route = ref.watch(routeDistanceInfoProvider);
-    final originCityName = route.originCityName;
-    final destinationCityName = route.destinationCityName;
-    final distKmStr = route.distKmStr;
-    final completedDistStr = route.completedDistStr;
-    final ratio = route.ratio;
+    final route = ref.watch(routeDistanceInfoProvider).asData?.value;
+    final goalRoute = ref.watch(goalRouteProvider);
+    final originCityName = route?.originCityName ?? goalRoute.originCity.name;
+    final destinationCityName =
+        route?.destinationCityName ?? goalRoute.destinationCity.name;
+    final distKmStr = route?.distKmStr ?? '0.0';
+    final completedDistStr = route?.completedDistStr ?? '0.0';
+    final ratio = route?.ratio ?? 0.0;
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -375,14 +377,15 @@ class _ProgressCard extends ConsumerWidget {
 // 本周运动卡片
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _WeeklyExerciseCard extends StatelessWidget {
+class _WeeklyExerciseCard extends ConsumerWidget {
   const _WeeklyExerciseCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final route = ref.watch(routeDistanceInfoProvider).asData?.value;
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -409,7 +412,7 @@ class _WeeklyExerciseCard extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                '42.5',
+                route?.weeklyDistanceKmStr ?? '0.0',
                 style: textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: tokens.textPrimary,
@@ -446,14 +449,15 @@ class _WeeklyExerciseCard extends StatelessWidget {
 // 累计旅途卡片
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _TotalTravelCard extends StatelessWidget {
+class _TotalTravelCard extends ConsumerWidget {
   const _TotalTravelCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final textTheme = Theme.of(context).textTheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final route = ref.watch(routeDistanceInfoProvider).asData?.value;
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -480,7 +484,7 @@ class _TotalTravelCard extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                '156.3',
+                route?.completedDistStr ?? '0.0',
                 style: textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: tokens.textPrimary,
@@ -500,7 +504,7 @@ class _TotalTravelCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '目标 1318 km',
+            '本月 ${route?.monthlyDistanceKmStr ?? '0.0'} km',
             style: textTheme.labelSmall?.copyWith(
               color: tokens.textSecondary,
               fontWeight: FontWeight.w400,
