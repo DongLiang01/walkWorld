@@ -124,6 +124,9 @@ class _CurrentTargetCard extends ConsumerWidget {
     final route = ref.watch(goalRouteProvider);
     final originCity = route.originCity.name;
     final destinationCity = route.destinationCity.name;
+    //获取出发地和目的地
+    final distanceRoute = ref.watch(routeDistanceInfoProvider);
+    final percent = (distanceRoute.ratio * 100).toInt();
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -158,7 +161,7 @@ class _CurrentTargetCard extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '12%',
+                '$percent%',
                 style: textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: tokens.tabBarActive,
