@@ -18,14 +18,16 @@ final class MotionMapPlatformView: NSObject, FlutterPlatformView, MAMapViewDeleg
         static let initialZoomLevel: CGFloat = 16
         /// 开始运动后聚焦起跑点时使用的缩放级别，要比初始态更聚焦。
         static let workoutStartZoomLevel: CGFloat = 18
-        /// 结束弹窗路线截图的留白，避免轨迹贴边。
-        static let finishSnapshotEdgePadding = UIEdgeInsets(top: 28, left: 24, bottom: 28, right: 24)
+        /// 结束截图的目标宽高比（16:9），与 Flutter 侧 _RouteSnapshotCard 的 aspectRatio 保持一致。
+        static let finishSnapshotAspectRatio: CGFloat = 16.0 / 9.0
+        /// 结束截图在 16:9 拟合区域内的额外留白，避免轨迹贴边。
+        static let finishSnapshotInnerPadding: CGFloat = 24
         /// 结束弹窗路线截图导出宽度，控制传给 Flutter 的图片体积。
         static let finishSnapshotTargetWidth: CGFloat = 640
         /// 结束弹窗路线截图导出压缩质量。
         static let finishSnapshotCompressionQuality: CGFloat = 0.74
-        /// 结束截图时，在自动拟合轨迹后额外缩小一个缩放级别，避免起终点过于贴近画面边缘。
-        static let finishSnapshotZoomOutDelta: CGFloat = 1
+        /// 结束截图时，在自动拟合轨迹后额外缩小半个缩放级别，进一步避免起终点贴近边缘。
+        static let finishSnapshotZoomOutDelta: CGFloat = 0.5
         /// 结束截图相机变化后的渲染稳定等待，避免长路线刚拟合完成就抢拍。
         static let finishSnapshotRenderSettleDelay: TimeInterval = 0.45
     }
@@ -591,7 +593,7 @@ extension MotionMapPlatformView {
             isProgrammaticCameraChange = true
             mapView.showOverlays(
                 [trackPolyline],
-                edgePadding: MapCameraConfig.finishSnapshotEdgePadding,
+                edgePadding: buildFinishSnapshotEdgePadding(),
                 animated: false
             )
             return true
@@ -673,27 +675,84 @@ extension MotionMapPlatformView {
         finishSnapshotCompletion = nil
     }
     
-    /// 将当前地图画面导出为压缩图片，并编码成 Base64 字符串。
+    /// 计算结束截图时的 edgePadding，使轨迹拟合在地图中心 16:9 区域内。
+    ///
+    /// 地图视图是竖屏全屏的，但截图只取中心 16:9 横条区域。
+    /// 为了让 `showOverlays` 把轨迹拟合在这个横条内，需要把上下多余的空间
+    /// 转化为 edgePadding，再叠加内部留白避免轨迹贴边。
+    private func buildFinishSnapshotEdgePadding() -> UIEdgeInsets {
+        let mapBounds = mapView.bounds
+        let innerPadding = MapCameraConfig.finishSnapshotInnerPadding
+        let snapshotHeight = mapBounds.width / MapCameraConfig.finishSnapshotAspectRatio
+        let verticalInset = max(0, (mapBounds.height - snapshotHeight) / 2.0)
+        
+        return UIEdgeInsets(
+            top: verticalInset + innerPadding,
+            left: innerPadding,
+            bottom: verticalInset + innerPadding,
+            right: innerPadding
+        )
+    }
+    
+    /// 将地图中心 16:9 区域导出为压缩图片，并编码成 Base64 字符串。
+    ///
+    /// 分三步完成：
+    /// 1. 以原始尺寸截取完整地图画面（保证 drawHierarchy 行为与默认一致）
+    /// 2. 从完整截图中裁剪出中心 16:9 区域
+    /// 3. 如果裁剪后的宽度超过目标导出宽度，缩放控制图片体积
     private func buildRouteSnapshotBase64() -> String? {
-        let bounds = mapView.bounds.integral
-        guard bounds.width > 0, bounds.height > 0 else {
+        let mapBounds = mapView.bounds
+        guard mapBounds.width > 0, mapBounds.height > 0 else {
             return nil
         }
         
-        let targetWidth = min(MapCameraConfig.finishSnapshotTargetWidth, bounds.width)
-        let scale = max(targetWidth / bounds.width, 0.6)
-        let targetSize = CGSize(width: targetWidth, height: bounds.height * scale)
+        // 第一步：以 @1x 精度截取完整地图画面。
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 1
-        let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
-        let image = renderer.image { _ in
+        let fullRenderer = UIGraphicsImageRenderer(size: mapBounds.size, format: format)
+        let fullImage = fullRenderer.image { _ in
             mapView.drawHierarchy(
-                in: CGRect(origin: .zero, size: targetSize),
+                in: CGRect(origin: .zero, size: mapBounds.size),
                 afterScreenUpdates: true
             )
         }
         
-        guard let imageData = image.jpegData(
+        // 第二步：从完整截图中裁剪出中心 16:9 区域。
+        let snapshotHeight = mapBounds.width / MapCameraConfig.finishSnapshotAspectRatio
+        let snapshotY = max(0, (mapBounds.height - snapshotHeight) / 2.0)
+        let cropRect = CGRect(
+            x: 0,
+            y: snapshotY,
+            width: mapBounds.width,
+            height: snapshotHeight
+        ).integral
+        
+        guard let fullCGImage = fullImage.cgImage,
+              let croppedCGImage = fullCGImage.cropping(to: cropRect) else {
+            return nil
+        }
+        
+        // 第三步：如果裁剪后的宽度超过目标导出宽度，缩放控制图片体积。
+        let croppedImage = UIImage(cgImage: croppedCGImage)
+        let croppedWidth = CGFloat(croppedCGImage.width)
+        
+        let exportImage: UIImage
+        if croppedWidth > MapCameraConfig.finishSnapshotTargetWidth {
+            let targetWidth = MapCameraConfig.finishSnapshotTargetWidth
+            let scale = targetWidth / croppedWidth
+            let targetSize = CGSize(
+                width: targetWidth,
+                height: CGFloat(croppedCGImage.height) * scale
+            )
+            let resizeRenderer = UIGraphicsImageRenderer(size: targetSize, format: format)
+            exportImage = resizeRenderer.image { _ in
+                croppedImage.draw(in: CGRect(origin: .zero, size: targetSize))
+            }
+        } else {
+            exportImage = croppedImage
+        }
+        
+        guard let imageData = exportImage.jpegData(
             compressionQuality: MapCameraConfig.finishSnapshotCompressionQuality
         ) else {
             return nil
