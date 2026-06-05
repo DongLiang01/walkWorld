@@ -1,0 +1,9 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="IconTraveler">
+<path id="Vector" d="M11 19.7083C15.8095 19.7083 19.7083 15.8095 19.7083 11C19.7083 6.19052 15.8095 2.29167 11 2.29167C6.19052 2.29167 2.29167 6.19052 2.29167 11C2.29167 15.8095 6.19052 19.7083 11 19.7083Z" stroke="#22C55E" stroke-width="1.375"/>
+<path id="Vector_2" d="M11 12.8333C12.0125 12.8333 12.8333 12.0125 12.8333 11C12.8333 9.98748 12.0125 9.16667 11 9.16667C9.98748 9.16667 9.16667 9.98748 9.16667 11C9.16667 12.0125 9.98748 12.8333 11 12.8333Z" fill="#22C55E"/>
+<path id="Vector_3" d="M11 4.125L12.375 11L11 9.16667L9.625 11L11 4.125Z" fill="#22C55E"/>
+<path id="Vector_4" d="M11 17.875L9.625 11L11 12.8333L12.375 11L11 17.875Z" fill="#22C55E" fill-opacity="0.4"/>
+<path id="Vector_5" d="M11 2.29167V3.66667M11 18.3333V19.7083M2.29167 11H3.66667M18.3333 11H19.7083" stroke="#22C55E" stroke-width="1.28333" stroke-linecap="round"/>
+</g>
+</svg>

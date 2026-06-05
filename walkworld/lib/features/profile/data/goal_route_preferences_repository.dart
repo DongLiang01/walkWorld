@@ -12,10 +12,12 @@ class GoalRoutePreferencesRepository {
   static const _originCityKey = 'originCityName';
   static const _destinationCityKey = 'destinationCityName';
   static const _searchHistoryKey = 'searchHistory';
+  static const _identityKey = 'identity';
 
   static String? _originCityName;
   static String? _destinationCityName;
   static List<String> _searchHistory = const [];
+  static String? _identity;
   static bool _initialized = false;
 
   /// 启动时读取本地缓存，失败时保持空缓存并使用业务默认值兜底。
@@ -39,10 +41,12 @@ class GoalRoutePreferencesRepository {
       _originCityName = _stringValue(decoded[_originCityKey]);
       _destinationCityName = _stringValue(decoded[_destinationCityKey]);
       _searchHistory = _stringListValue(decoded[_searchHistoryKey]);
+      _identity = _stringValue(decoded[_identityKey]);
     } catch (_) {
       _originCityName = null;
       _destinationCityName = null;
       _searchHistory = const [];
+      _identity = null;
     } finally {
       _initialized = true;
     }
@@ -56,6 +60,9 @@ class GoalRoutePreferencesRepository {
 
   /// 已缓存的搜索记录。
   static List<String> get searchHistory => List.unmodifiable(_searchHistory);
+
+  /// 已缓存的用户身份。
+  static String? get identity => _identity;
 
   /// 保存出发地和目的地。
   static Future<void> saveRoute({
@@ -73,6 +80,12 @@ class GoalRoutePreferencesRepository {
     await _writePreferences();
   }
 
+  /// 保存用户身份。
+  static Future<void> saveIdentity(String identity) async {
+    _identity = identity;
+    await _writePreferences();
+  }
+
   static Future<void> _writePreferences() async {
     try {
       final file = await _preferencesFile();
@@ -81,6 +94,7 @@ class GoalRoutePreferencesRepository {
           _originCityKey: _originCityName,
           _destinationCityKey: _destinationCityName,
           _searchHistoryKey: _searchHistory,
+          _identityKey: _identity,
         }),
         flush: true,
       );

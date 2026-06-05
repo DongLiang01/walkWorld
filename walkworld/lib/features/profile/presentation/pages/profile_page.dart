@@ -6,7 +6,9 @@ import '../../../../app/theme/app_theme_tokens.dart';
 import '../../../motion/application/motion_history_provider.dart';
 import '../../../motion/models/models.dart';
 import '../../application/goal_route_provider.dart';
+import '../../application/identity_provider.dart';
 import 'city_select_page.dart';
+import 'identity_select_page.dart';
 
 // ─── 页面级常量 ───────────────────────────────────────────────
 /// 卡片通用圆角
@@ -77,6 +79,8 @@ class ProfilePage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: const [
+              _ProfileIdentitySection(),
+              SizedBox(height: _kSectionGap),
               _ProfileCurrentGoalSection(),
               SizedBox(height: _kSectionGap),
               _ProfileStatsSection(),
@@ -87,6 +91,75 @@ class ProfilePage extends ConsumerWidget {
               SizedBox(height: 24), // 底部留白
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 用户身份区块 ──────────────────────────────────────────────
+
+/// 用户当前身份展示卡片（图标 + 身份名称 + 可点击箭头）
+class _ProfileIdentitySection extends ConsumerWidget {
+  const _ProfileIdentitySection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = Theme.of(context).extension<AppThemeTokens>()!;
+    final identity = ref.watch(identityProvider);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const IdentitySelectPage(),
+          ),
+        );
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: _profileCardDecoration(tokens),
+        child: Row(
+          children: [
+            // 身份图标
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: tokens.profileIconBgOrange,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: tokens.profileIconBorderOrange),
+              ),
+              child: Center(
+                child: AppSvgIcon(
+                  AppSvgAssets.profile(identity.iconName),
+                  width: 20,
+                  height: 20,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // 身份名称
+            Expanded(
+              child: Text(
+                identity.name,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.profileTextPrimary,
+                ),
+              ),
+            ),
+            // 右箭头
+            AppSvgIcon(
+              AppSvgAssets.profile('chevron_right'),
+              width: 16,
+              height: 16,
+              color: tokens.profileTextSecondary,
+            ),
+          ],
         ),
       ),
     );
