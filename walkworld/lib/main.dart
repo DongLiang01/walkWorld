@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app/presentation/pages/app_shell_page.dart';
 import 'app/theme/app_theme.dart';
 import 'features/profile/application/city_data_provider.dart';
+import 'features/profile/data/goal_route_preferences_repository.dart';
 
 /// 应用主题模式。
 ///
@@ -31,6 +32,8 @@ Future<void> main() async {
   //app启动前先解析好城市数据
   await providerContainer.read(citiesProvider.future);
   await providerContainer.read(groupedCitiesProvider.future);
+  //app启动前恢复上次选择的出发地、目的地和搜索记录
+  await GoalRoutePreferencesRepository.initialize();
 
   runApp(
     UncontrolledProviderScope(

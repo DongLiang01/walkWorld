@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/svg/app_svg_icon.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
+import '../../../profile/application/goal_route_provider.dart';
 import '../../application/application.dart';
 import 'motion_page_support.dart';
 
@@ -36,6 +37,9 @@ class MotionFinishSheet extends ConsumerWidget {
     final mediaQuery = MediaQuery.of(context);
     final finishedSession = motionState.finishedSession;
     final realtime = motionState.realtime;
+    final goalRoute = ref.watch(goalRouteProvider);
+    final routeTitle =
+        '${goalRoute.originCity.name} → ${goalRoute.destinationCity.name}';
 
     final durationFormat = formatMotionDuration(
       finishedSession?.durationSeconds ?? realtime?.durationSeconds ?? 0,
@@ -223,6 +227,7 @@ class MotionFinishSheet extends ConsumerWidget {
                   appTokens: appTokens,
                   isDark: isDark,
                   distanceKm: distanceKm,
+                  routeTitle: routeTitle,
                 ),
               ),
               const SizedBox(height: 10.4),
@@ -382,11 +387,13 @@ class _JourneyProgressCard extends StatelessWidget {
     required this.appTokens,
     required this.isDark,
     required this.distanceKm,
+    required this.routeTitle,
   });
 
   final AppThemeTokens appTokens;
   final bool isDark;
   final String distanceKm;
+  final String routeTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -420,7 +427,7 @@ class _JourneyProgressCard extends StatelessWidget {
                       const SizedBox(width: 5.2),
                       Expanded(
                         child: Text(
-                          '北京 → 上海',
+                          routeTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(

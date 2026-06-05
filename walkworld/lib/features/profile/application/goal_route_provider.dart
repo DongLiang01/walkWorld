@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../motion/application/motion_history_provider.dart';
+import '../data/goal_route_preferences_repository.dart';
 import 'city_data_provider.dart';
 import '../domain/city_model.dart';
 import '../../../../app/utils/geo_utils.dart';
@@ -27,11 +30,18 @@ class GoalRouteNotifier extends Notifier<GoalRouteState> {
   @override
   GoalRouteState build() {
     final cities = ref.read(citiesProvider).requireValue;
+    final savedOriginName = GoalRoutePreferencesRepository.originCityName;
+    final savedDestinationName =
+        GoalRoutePreferencesRepository.destinationCityName;
 
-    // 默认出发地为北京，目的地为上海，具体经纬度从已解析城市列表中获取
+    // 优先恢复本地保存的路线；首次运行或缓存失效时再使用北京到上海兜底。
     return GoalRouteState(
-      originCity: findCityByName(cities, '北京'),
-      destinationCity: findCityByName(cities, '上海'),
+      originCity:
+          _findCityByNameOrNull(cities, savedOriginName) ??
+          findCityByName(cities, '北京'),
+      destinationCity:
+          _findCityByNameOrNull(cities, savedDestinationName) ??
+          findCityByName(cities, '上海'),
     );
   }
 
@@ -40,6 +50,7 @@ class GoalRouteNotifier extends Notifier<GoalRouteState> {
     state = state.copyWith(originCity: city);
     // 同时把选择成功的城市追加到搜索历史中
     ref.read(searchHistoryProvider.notifier).addCity(city.name);
+    _saveRoute();
   }
 
   /// 更新目的城市
@@ -47,6 +58,7 @@ class GoalRouteNotifier extends Notifier<GoalRouteState> {
     state = state.copyWith(destinationCity: city);
     // 同时把选择成功的城市追加到搜索历史中
     ref.read(searchHistoryProvider.notifier).addCity(city.name);
+    _saveRoute();
   }
 
   /// 互换出发地与目的地
@@ -54,6 +66,16 @@ class GoalRouteNotifier extends Notifier<GoalRouteState> {
     state = GoalRouteState(
       originCity: state.destinationCity,
       destinationCity: state.originCity,
+    );
+    _saveRoute();
+  }
+
+  void _saveRoute() {
+    unawaited(
+      GoalRoutePreferencesRepository.saveRoute(
+        originCityName: state.originCity.name,
+        destinationCityName: state.destinationCity.name,
+      ),
     );
   }
 }
@@ -65,12 +87,9 @@ final goalRouteProvider = NotifierProvider<GoalRouteNotifier, GoalRouteState>(
 
 /// 搜索记录/最近城市选择历史管理 Notifier
 class SearchHistoryNotifier extends Notifier<List<String>> {
-  // 默认包含 Figma 原型上展示的城市
-  static const _defaultHistory = ['上海', '广州', '成都', '杭州'];
-
   @override
   List<String> build() {
-    return _defaultHistory;
+    return GoalRoutePreferencesRepository.searchHistory;
   }
 
   /// 添加城市到最近记录（若已存在则移到最前，最多保留 5 个）
@@ -82,11 +101,17 @@ class SearchHistoryNotifier extends Notifier<List<String>> {
       current.removeLast(); // 保持最多 5 个
     }
     state = current;
+    _saveHistory();
   }
 
   /// 清除历史记录
   void clearHistory() {
     state = const [];
+    _saveHistory();
+  }
+
+  void _saveHistory() {
+    unawaited(GoalRoutePreferencesRepository.saveSearchHistory(state));
   }
 }
 
@@ -95,6 +120,14 @@ final searchHistoryProvider =
     NotifierProvider<SearchHistoryNotifier, List<String>>(
       SearchHistoryNotifier.new,
     );
+
+City? _findCityByNameOrNull(List<City> cities, String? name) {
+  if (name == null) return null;
+  for (final city in cities) {
+    if (city.name == name) return city;
+  }
+  return null;
+}
 
 /// 出发地和目的地之间的距离、进度信息载体
 class RouteDistanceInfo {
