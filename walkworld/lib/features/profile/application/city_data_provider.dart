@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lpinyin/lpinyin.dart';
 
 import '../domain/city_model.dart';
+import 'identity_provider.dart';
 
 const String _citySeedAssetPath = 'assets/datas/city_seed_data.json';
 
@@ -64,6 +65,34 @@ final citySelectDataProvider = FutureProvider<CitySelectData>((ref) async {
   return CitySelectData(cities: cities, groupedCities: groupedCities);
 });
 
+/// 根据身份和选择类型（出发/目的）筛选可选城市并分组的聚合 Provider。
+///
+/// [isOrigin] 为 true 时按 `identity.originZones` 筛选，否则按 `identity.destZones`。
+final filteredCitySelectDataProvider =
+    FutureProvider.family<CitySelectData, bool>((ref, isOrigin) async {
+  final allCities = await ref.watch(citiesProvider.future);
+  final identity = ref.watch(identityProvider);
+  final allowedZones = isOrigin ? identity.originZones : identity.destZones;
+
+  // 按 zone 筛选
+  final filtered =
+      allCities.where((c) => allowedZones.contains(c.zone)).toList();
+
+  // 按拼音首字母分组
+  final groups = <String, List<City>>{};
+  for (final city in filtered) {
+    groups.putIfAbsent(getCityPinyinGroup(city), () => []).add(city);
+  }
+  final sortedKeys = groups.keys.toList()..sort();
+  final sortedGroups = <String, List<City>>{};
+  for (final key in sortedKeys) {
+    sortedGroups[key] = groups[key]!
+      ..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  return CitySelectData(cities: filtered, groupedCities: sortedGroups);
+});
+
 /// 获取城市用于列表分组的首字母
 String getCityPinyinGroup(City city) {
   final name = city.name.trim();
@@ -86,3 +115,4 @@ String getCityPinyinGroup(City city) {
 City findCityByName(List<City> cities, String name) {
   return cities.firstWhere((city) => city.name == name);
 }
+

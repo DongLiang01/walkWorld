@@ -31,18 +31,58 @@ class GoalRouteNotifier extends Notifier<GoalRouteState> {
   @override
   GoalRouteState build() {
     final cities = ref.read(citiesProvider).requireValue;
+    final identity = ref.watch(identityProvider);
+
+    // 完全固定路线的身份（环球旅行家 / 太空固定身份），直接使用默认路线
+    if (identity.isFullyFixed) {
+      // 环球旅行家没有实际城市，给一个兜底即可（UI 上不展示）
+      if (identity.isGlobal) {
+        return GoalRouteState(
+          originCity: findCityByName(cities, '北京'),
+          destinationCity: findCityByName(cities, '上海'),
+        );
+      }
+      return GoalRouteState(
+        originCity: findCityByName(cities, identity.defaultOrigin),
+        destinationCity: findCityByName(cities, identity.defaultDest),
+      );
+    }
+
+    // 非固定路线：尝试恢复本地保存的路线
     final savedOriginName = GoalRoutePreferencesRepository.originCityName;
     final savedDestinationName =
         GoalRoutePreferencesRepository.destinationCityName;
 
-    // 优先恢复本地保存的路线；首次运行或缓存失效时再使用北京到上海兜底。
+    final savedOrigin = _findCityByNameOrNull(cities, savedOriginName);
+    final savedDest = _findCityByNameOrNull(cities, savedDestinationName);
+
+    // 校验已保存的城市是否在当前身份允许的 zone 内
+    final originValid =
+        savedOrigin != null &&
+        (identity.fixedOrigin ||
+            identity.originZones.contains(savedOrigin.zone));
+    final destValid =
+        savedDest != null && identity.destZones.contains(savedDest.zone);
+
+    final City originCity;
+    if (identity.fixedOrigin) {
+      originCity = findCityByName(cities, identity.defaultOrigin);
+    } else if (savedOrigin != null && originValid) {
+      originCity = savedOrigin;
+    } else {
+      originCity = findCityByName(cities, identity.defaultOrigin);
+    }
+
+    final City destCity;
+    if (savedDest != null && destValid) {
+      destCity = savedDest;
+    } else {
+      destCity = findCityByName(cities, identity.defaultDest);
+    }
+
     return GoalRouteState(
-      originCity:
-          _findCityByNameOrNull(cities, savedOriginName) ??
-          findCityByName(cities, '北京'),
-      destinationCity:
-          _findCityByNameOrNull(cities, savedDestinationName) ??
-          findCityByName(cities, '上海'),
+      originCity: originCity,
+      destinationCity: destCity,
     );
   }
 
@@ -196,15 +236,22 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
   final identity = ref.watch(identityProvider);
   final motionStats = await ref.watch(motionHistoryStatsProvider.future);
 
-  // 环球旅行家模式：目标距离固定为地球赤道周长 40,075 km
+  // 根据身份类型决定目标距离和展示名称
   final double distKm;
   final String originName;
   final String destName;
   if (identity.isGlobal) {
+    // 环球旅行家模式：目标距离固定为地球赤道周长 40,075 km
     distKm = 40075.0;
     originName = '环绕地球一周';
     destName = '环绕地球一周';
+  } else if (route.destinationCity.distKm != null) {
+    // 太空目的地：使用固定距离
+    distKm = route.destinationCity.distKm!;
+    originName = route.originCity.name;
+    destName = route.destinationCity.name;
   } else {
+    // 地球城市间：计算直线距离
     final distMeters = calcGeoDistance(
       route.originCity.lat,
       route.originCity.lng,

@@ -59,7 +59,9 @@ class _CitySelectPageState extends ConsumerState<CitySelectPage> {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final routeState = ref.watch(goalRouteProvider);
-    final citySelectDataAsync = ref.watch(citySelectDataProvider);
+    final citySelectDataAsync = ref.watch(
+      filteredCitySelectDataProvider(widget.isOrigin),
+    );
 
     // 获取当前维度的选中城市
     final currentSelectedCity = widget.isOrigin
@@ -392,7 +394,7 @@ class _CitySelectPageState extends ConsumerState<CitySelectPage> {
                 final target = allCities.firstWhere(
                   (c) => c.name == cityName,
                   orElse: () =>
-                      City(name: cityName, country: 'China', lat: 0, lng: 0),
+                      City(name: cityName, country: 'China', zone: 'domestic', lat: 0, lng: 0),
                 );
                 if (target.lat != 0) {
                   _selectCityAndPop(target);

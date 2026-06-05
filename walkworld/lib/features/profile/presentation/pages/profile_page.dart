@@ -37,6 +37,18 @@ BoxDecoration _profileCardDecoration(AppThemeTokens tokens) {
   );
 }
 
+/// 格式化距离展示文案（适配太空大距离）
+String _formatDistKm(double distKm) {
+  if (distKm >= 100000000) {
+    // 亿级：如 1.5 亿 km
+    return '${(distKm / 100000000).toStringAsFixed(1)} 亿 km';
+  } else if (distKm >= 10000) {
+    // 万级：如 38.4 万 km
+    return '${(distKm / 10000).toStringAsFixed(1)} 万 km';
+  }
+  return '${distKm.toStringAsFixed(1)} km';
+}
+
 // ─── 历史记录数据模型（仅页面内使用）────────────────────────────
 class _HistoryItem {
   const _HistoryItem({
@@ -168,7 +180,7 @@ class _ProfileIdentitySection extends ConsumerWidget {
 
 // ─── 当前目标区块 ──────────────────────────────────────────────
 
-/// 当前目标卡片（出发地 → 目的地 / 环球旅行家模式）
+/// 当前目标卡片（根据身份类型展示不同内容）
 class _ProfileCurrentGoalSection extends ConsumerWidget {
   const _ProfileCurrentGoalSection();
 
@@ -193,39 +205,61 @@ class _ProfileCurrentGoalSection extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // 环球旅行家模式：展示「环绕地球一周」文案
+          // ── 环球旅行家：展示「环绕地球一周」文案 ──
           if (identity.isGlobal)
-            Row(
-              children: [
-                // 地球图标
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: tokens.profileIconBgBlue,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: tokens.profileIconBorderBlue),
-                  ),
-                  child: Center(
-                    child: AppSvgIcon(
-                      AppSvgAssets.profile('origin_dot'),
-                      width: 12,
-                      height: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '环绕地球一周',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.profileTextPrimary,
-                  ),
-                ),
-              ],
+            _FixedRouteLabel(
+              tokens: tokens,
+              iconBg: tokens.profileIconBgBlue,
+              iconBorder: tokens.profileIconBorderBlue,
+              iconAsset: AppSvgAssets.profile('origin_dot'),
+              label: '环绕地球一周',
             )
-          // 其他身份：出发地 / 目的地选择模式
+          // ── 太空固定路线（宇航训练员/登月/太阳远征者）：固定展示，无交互 ──
+          else if (identity.isFullyFixed)
+            _FixedRouteLabel(
+              tokens: tokens,
+              iconBg: tokens.profileIconBgBlue,
+              iconBorder: tokens.profileIconBorderBlue,
+              iconAsset: AppSvgAssets.profile('origin_dot'),
+              label: '${identity.defaultOrigin} → ${identity.defaultDest}',
+            )
+          // ── 星际殖民者：出发地固定 + 目的地可选 + 无交换按钮 ──
+          else if (identity.fixedOrigin && !identity.fixedDest) ...[
+            // 出发地行（固定，不可点击，无箭头）
+            _LocationRow(
+              iconBg: tokens.profileIconBgBlue,
+              iconBorder: tokens.profileIconBorderBlue,
+              iconAsset: AppSvgAssets.profile('origin_dot'),
+              label: '出发地',
+              location: route.originCity.name,
+              showArrow: false,
+            ),
+            // 中间连接线（无交换按钮）
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 8, bottom: 8),
+              child: _DottedLine(color: tokens.profileTextSecondary),
+            ),
+            // 目的地行（可点击）
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CitySelectPage(isOrigin: false),
+                  ),
+                );
+              },
+              behavior: HitTestBehavior.opaque,
+              child: _LocationRow(
+                iconBg: tokens.profileIconBgOrange,
+                iconBorder: tokens.profileIconBorderOrange,
+                iconAsset: AppSvgAssets.profile('dest_flag'),
+                label: '目的地',
+                location: route.destinationCity.name,
+              ),
+            ),
+          ]
+          // ── 普通城市选择（旅行达人/亚洲探索者/洲际探索者）──
           else ...[
             // 出发地行
             GestureDetector(
@@ -286,6 +320,52 @@ class _ProfileCurrentGoalSection extends ConsumerWidget {
   }
 }
 
+/// 固定路线展示行（单行图标 + 文案，无交互）
+class _FixedRouteLabel extends StatelessWidget {
+  const _FixedRouteLabel({
+    required this.tokens,
+    required this.iconBg,
+    required this.iconBorder,
+    required this.iconAsset,
+    required this.label,
+  });
+
+  final AppThemeTokens tokens;
+  final Color iconBg;
+  final Color iconBorder;
+  final String iconAsset;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: iconBg,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: iconBorder),
+          ),
+          child: Center(
+            child: AppSvgIcon(iconAsset, width: 12, height: 12),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: tokens.profileTextPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// 出发地 / 目的地展示行
 class _LocationRow extends StatelessWidget {
   const _LocationRow({
@@ -294,6 +374,7 @@ class _LocationRow extends StatelessWidget {
     required this.iconAsset,
     required this.label,
     required this.location,
+    this.showArrow = true,
   });
 
   final Color iconBg;
@@ -301,6 +382,9 @@ class _LocationRow extends StatelessWidget {
   final String iconAsset;
   final String label;
   final String location;
+
+  /// 是否显示右箭头（固定出发地行不需要箭头）
+  final bool showArrow;
 
   @override
   Widget build(BuildContext context) {
@@ -345,13 +429,14 @@ class _LocationRow extends StatelessWidget {
             ],
           ),
         ),
-        // 右箭头
-        AppSvgIcon(
-          AppSvgAssets.profile('chevron_right'),
-          width: 16,
-          height: 16,
-          color: tokens.profileTextSecondary,
-        ),
+        // 右箭头（可选）
+        if (showArrow)
+          AppSvgIcon(
+            AppSvgAssets.profile('chevron_right'),
+            width: 16,
+            height: 16,
+            color: tokens.profileTextSecondary,
+          ),
       ],
     );
   }
@@ -598,11 +683,11 @@ class _ProfileJourneySection extends ConsumerWidget {
           // 路线标题行（蓝点 + 路线 + 总里程）
           _JourneyRouteHeader(
             tokens: tokens,
-            // 环球旅行家模式：直接显示「环绕地球一周」
+            // 环球旅行家显示特殊文案，其他身份使用 provider 提供的城市名
             routeLabel: identity.isGlobal
                 ? '环绕地球一周'
                 : '${route?.originCityName ?? goalRoute.originCity.name} → ${route?.destinationCityName ?? goalRoute.destinationCity.name}',
-            totalDistText: '共 ${distKm.toStringAsFixed(1)} km',
+            totalDistText: '共 ${_formatDistKm(distKm)}',
           ),
           const SizedBox(height: 16),
           // 完成百分比

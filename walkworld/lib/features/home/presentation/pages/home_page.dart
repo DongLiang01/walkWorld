@@ -123,10 +123,15 @@ class _CurrentTargetCard extends ConsumerWidget {
     final distanceRoute = ref.watch(routeDistanceInfoProvider).asData?.value;
     final percent = ((distanceRoute?.ratio ?? 0) * 100).toInt();
 
-    // 环球旅行家模式展示「环绕地球一周」，其他身份展示城市路线
-    final targetLabel = identity.isGlobal
-        ? '环绕地球一周'
-        : '${route.originCity.name} → ${route.destinationCity.name}';
+    // 根据身份类型决定目标展示文案
+    final String targetLabel;
+    if (identity.isGlobal) {
+      targetLabel = '环绕地球一周';
+    } else if (identity.isFullyFixed) {
+      targetLabel = '${identity.defaultOrigin} → ${identity.defaultDest}';
+    } else {
+      targetLabel = '${route.originCity.name} → ${route.destinationCity.name}';
+    }
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -335,7 +340,7 @@ class _ProgressCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
-          // 环球旅行家模式：进度条下方只展示「环绕地球一周」文案
+          // 固定路线身份：进度条下方展示统一文案
           if (identity.isGlobal)
             Center(
               child: Text(
@@ -346,7 +351,17 @@ class _ProgressCard extends ConsumerWidget {
                 ),
               ),
             )
-          // 其他身份：起终点标签行
+          else if (identity.isFullyFixed)
+            Center(
+              child: Text(
+                '${identity.defaultOrigin} → ${identity.defaultDest}',
+                style: textTheme.bodySmall?.copyWith(
+                  color: tokens.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+            )
+          // 可选城市身份（含星际殖民者）：起终点标签行
           else
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

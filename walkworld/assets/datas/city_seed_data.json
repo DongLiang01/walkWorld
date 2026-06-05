@@ -2,469 +2,595 @@
   {
     "name": "北京",
     "country": "China",
+    "zone": "domestic",
     "lat": 39.9042,
     "lng": 116.4074
   },
   {
     "name": "上海",
     "country": "China",
+    "zone": "domestic",
     "lat": 31.2304,
     "lng": 121.4737
   },
   {
     "name": "广州",
     "country": "China",
+    "zone": "domestic",
     "lat": 23.1291,
     "lng": 113.2644
   },
   {
     "name": "深圳",
     "country": "China",
+    "zone": "domestic",
     "lat": 22.5431,
     "lng": 114.0579
   },
   {
     "name": "杭州",
     "country": "China",
+    "zone": "domestic",
     "lat": 30.2741,
     "lng": 120.1551
   },
   {
     "name": "南京",
     "country": "China",
+    "zone": "domestic",
     "lat": 32.0603,
     "lng": 118.7969
   },
   {
     "name": "武汉",
     "country": "China",
+    "zone": "domestic",
     "lat": 30.5928,
     "lng": 114.3055
   },
   {
     "name": "成都",
     "country": "China",
+    "zone": "domestic",
     "lat": 30.5728,
     "lng": 104.0668
   },
   {
     "name": "重庆",
     "country": "China",
+    "zone": "domestic",
     "lat": 29.563,
     "lng": 106.5516
   },
   {
     "name": "西安",
     "country": "China",
+    "zone": "domestic",
     "lat": 34.3416,
     "lng": 108.9398
   },
   {
     "name": "天津",
     "country": "China",
+    "zone": "domestic",
     "lat": 39.3434,
     "lng": 117.3616
   },
   {
     "name": "苏州",
     "country": "China",
+    "zone": "domestic",
     "lat": 31.2989,
     "lng": 120.5853
   },
   {
     "name": "长沙",
     "country": "China",
+    "zone": "domestic",
     "lat": 28.2282,
     "lng": 112.9388
   },
   {
     "name": "郑州",
     "country": "China",
+    "zone": "domestic",
     "lat": 34.7473,
     "lng": 113.6249
   },
   {
     "name": "青岛",
     "country": "China",
+    "zone": "domestic",
     "lat": 36.0671,
     "lng": 120.3826
   },
   {
     "name": "厦门",
     "country": "China",
+    "zone": "domestic",
     "lat": 24.4798,
     "lng": 118.0894
   },
   {
     "name": "福州",
     "country": "China",
+    "zone": "domestic",
     "lat": 26.0745,
     "lng": 119.2965
   },
   {
     "name": "昆明",
     "country": "China",
+    "zone": "domestic",
     "lat": 25.0389,
     "lng": 102.7183
   },
   {
     "name": "南宁",
     "country": "China",
+    "zone": "domestic",
     "lat": 22.817,
     "lng": 108.3669
   },
   {
     "name": "海口",
     "country": "China",
+    "zone": "domestic",
     "lat": 20.044,
     "lng": 110.1983
   },
   {
     "name": "哈尔滨",
     "country": "China",
+    "zone": "domestic",
     "lat": 45.8038,
     "lng": 126.5349
   },
   {
     "name": "沈阳",
     "country": "China",
+    "zone": "domestic",
     "lat": 41.8057,
     "lng": 123.4315
   },
   {
     "name": "大连",
     "country": "China",
+    "zone": "domestic",
     "lat": 38.914,
     "lng": 121.6147
   },
   {
     "name": "长春",
     "country": "China",
+    "zone": "domestic",
     "lat": 43.8171,
     "lng": 125.3235
   },
   {
     "name": "石家庄",
     "country": "China",
+    "zone": "domestic",
     "lat": 38.0428,
     "lng": 114.5149
   },
   {
     "name": "太原",
     "country": "China",
+    "zone": "domestic",
     "lat": 37.8706,
     "lng": 112.5489
   },
   {
     "name": "呼和浩特",
     "country": "China",
+    "zone": "domestic",
     "lat": 40.8426,
     "lng": 111.7492
   },
   {
     "name": "兰州",
     "country": "China",
+    "zone": "domestic",
     "lat": 36.0611,
     "lng": 103.8343
   },
   {
     "name": "银川",
     "country": "China",
+    "zone": "domestic",
     "lat": 38.4872,
     "lng": 106.2309
   },
   {
     "name": "乌鲁木齐",
     "country": "China",
+    "zone": "domestic",
     "lat": 43.8256,
     "lng": 87.6168
   },
   {
     "name": "东京",
     "country": "Japan",
+    "zone": "asia",
     "lat": 35.6762,
     "lng": 139.6503
   },
   {
     "name": "大阪",
     "country": "Japan",
+    "zone": "asia",
     "lat": 34.6937,
     "lng": 135.5023
   },
   {
     "name": "首尔",
     "country": "South Korea",
+    "zone": "asia",
     "lat": 37.5665,
     "lng": 126.978
   },
   {
     "name": "釜山",
     "country": "South Korea",
+    "zone": "asia",
     "lat": 35.1796,
     "lng": 129.0756
   },
   {
     "name": "新加坡",
     "country": "Singapore",
+    "zone": "asia",
     "lat": 1.3521,
     "lng": 103.8198
   },
   {
     "name": "曼谷",
     "country": "Thailand",
+    "zone": "asia",
     "lat": 13.7563,
     "lng": 100.5018
   },
   {
     "name": "吉隆坡",
     "country": "Malaysia",
+    "zone": "asia",
     "lat": 3.139,
     "lng": 101.6869
   },
   {
     "name": "雅加达",
     "country": "Indonesia",
+    "zone": "asia",
     "lat": -6.2088,
     "lng": 106.8456
   },
   {
     "name": "马尼拉",
     "country": "Philippines",
+    "zone": "asia",
     "lat": 14.5995,
     "lng": 120.9842
   },
   {
     "name": "胡志明市",
     "country": "Vietnam",
+    "zone": "asia",
     "lat": 10.8231,
     "lng": 106.6297
   },
   {
     "name": "河内",
     "country": "Vietnam",
+    "zone": "asia",
     "lat": 21.0278,
     "lng": 105.8342
   },
   {
     "name": "新德里",
     "country": "India",
+    "zone": "asia",
     "lat": 28.6139,
     "lng": 77.209
   },
   {
     "name": "孟买",
     "country": "India",
+    "zone": "asia",
     "lat": 19.076,
     "lng": 72.8777
   },
   {
     "name": "迪拜",
     "country": "UAE",
+    "zone": "asia",
     "lat": 25.2048,
     "lng": 55.2708
   },
   {
     "name": "伊斯坦布尔",
     "country": "Turkey",
+    "zone": "intercontinental",
     "lat": 41.0082,
     "lng": 28.9784
   },
   {
     "name": "莫斯科",
     "country": "Russia",
+    "zone": "intercontinental",
     "lat": 55.7558,
     "lng": 37.6173
   },
   {
     "name": "伦敦",
     "country": "United Kingdom",
+    "zone": "intercontinental",
     "lat": 51.5074,
     "lng": -0.1278
   },
   {
     "name": "曼彻斯特",
     "country": "United Kingdom",
+    "zone": "intercontinental",
     "lat": 53.4808,
     "lng": -2.2426
   },
   {
     "name": "巴黎",
     "country": "France",
+    "zone": "intercontinental",
     "lat": 48.8566,
     "lng": 2.3522
   },
   {
     "name": "柏林",
     "country": "Germany",
+    "zone": "intercontinental",
     "lat": 52.52,
     "lng": 13.405
   },
   {
     "name": "罗马",
     "country": "Italy",
+    "zone": "intercontinental",
     "lat": 41.9028,
     "lng": 12.4964
   },
   {
     "name": "马德里",
     "country": "Spain",
+    "zone": "intercontinental",
     "lat": 40.4168,
     "lng": -3.7038
   },
   {
     "name": "阿姆斯特丹",
     "country": "Netherlands",
+    "zone": "intercontinental",
     "lat": 52.3676,
     "lng": 4.9041
   },
   {
     "name": "布鲁塞尔",
     "country": "Belgium",
+    "zone": "intercontinental",
     "lat": 50.8503,
     "lng": 4.3517
   },
   {
     "name": "维也纳",
     "country": "Austria",
+    "zone": "intercontinental",
     "lat": 48.2082,
     "lng": 16.3738
   },
   {
     "name": "苏黎世",
     "country": "Switzerland",
+    "zone": "intercontinental",
     "lat": 47.3769,
     "lng": 8.5417
   },
   {
     "name": "斯德哥尔摩",
     "country": "Sweden",
+    "zone": "intercontinental",
     "lat": 59.3293,
     "lng": 18.0686
   },
   {
     "name": "奥斯陆",
     "country": "Norway",
+    "zone": "intercontinental",
     "lat": 59.9139,
     "lng": 10.7522
   },
   {
     "name": "哥本哈根",
     "country": "Denmark",
+    "zone": "intercontinental",
     "lat": 55.6761,
     "lng": 12.5683
   },
   {
     "name": "赫尔辛基",
     "country": "Finland",
+    "zone": "intercontinental",
     "lat": 60.1699,
     "lng": 24.9384
   },
   {
     "name": "纽约",
     "country": "USA",
+    "zone": "intercontinental",
     "lat": 40.7128,
     "lng": -74.006
   },
   {
     "name": "洛杉矶",
     "country": "USA",
+    "zone": "intercontinental",
     "lat": 34.0522,
     "lng": -118.2437
   },
   {
     "name": "旧金山",
     "country": "USA",
+    "zone": "intercontinental",
     "lat": 37.7749,
     "lng": -122.4194
   },
   {
     "name": "西雅图",
     "country": "USA",
+    "zone": "intercontinental",
     "lat": 47.6062,
     "lng": -122.3321
   },
   {
     "name": "芝加哥",
     "country": "USA",
+    "zone": "intercontinental",
     "lat": 41.8781,
     "lng": -87.6298
   },
   {
     "name": "波士顿",
     "country": "USA",
+    "zone": "intercontinental",
     "lat": 42.3601,
     "lng": -71.0589
   },
   {
     "name": "多伦多",
     "country": "Canada",
+    "zone": "intercontinental",
     "lat": 43.6532,
     "lng": -79.3832
   },
   {
     "name": "温哥华",
     "country": "Canada",
+    "zone": "intercontinental",
     "lat": 49.2827,
     "lng": -123.1207
   },
   {
     "name": "墨西哥城",
     "country": "Mexico",
+    "zone": "intercontinental",
     "lat": 19.4326,
     "lng": -99.1332
   },
   {
     "name": "圣保罗",
     "country": "Brazil",
+    "zone": "intercontinental",
     "lat": -23.5505,
     "lng": -46.6333
   },
   {
     "name": "里约热内卢",
     "country": "Brazil",
+    "zone": "intercontinental",
     "lat": -22.9068,
     "lng": -43.1729
   },
   {
     "name": "布宜诺斯艾利斯",
     "country": "Argentina",
+    "zone": "intercontinental",
     "lat": -34.6037,
     "lng": -58.3816
   },
   {
     "name": "悉尼",
     "country": "Australia",
+    "zone": "intercontinental",
     "lat": -33.8688,
     "lng": 151.2093
   },
   {
     "name": "墨尔本",
     "country": "Australia",
+    "zone": "intercontinental",
     "lat": -37.8136,
     "lng": 144.9631
   },
   {
     "name": "奥克兰",
     "country": "New Zealand",
+    "zone": "intercontinental",
     "lat": -36.8509,
     "lng": 174.7645
   },
   {
     "name": "开普敦",
     "country": "South Africa",
+    "zone": "intercontinental",
     "lat": -33.9249,
     "lng": 18.4241
   },
   {
     "name": "开罗",
     "country": "Egypt",
+    "zone": "intercontinental",
     "lat": 30.0444,
     "lng": 31.2357
   },
   {
     "name": "内罗毕",
     "country": "Kenya",
+    "zone": "intercontinental",
     "lat": -1.2921,
     "lng": 36.8219
+  },
+  {
+    "name": "地球",
+    "country": "Earth",
+    "zone": "space",
+    "lat": 0,
+    "lng": 0,
+    "distKm": 0
+  },
+  {
+    "name": "国际空间站",
+    "country": "Space",
+    "zone": "space",
+    "lat": 0,
+    "lng": 0,
+    "distKm": 408
+  },
+  {
+    "name": "月球",
+    "country": "Space",
+    "zone": "space",
+    "lat": 0,
+    "lng": 0,
+    "distKm": 354000
+  },
+  {
+    "name": "火星",
+    "country": "Space",
+    "zone": "planet",
+    "lat": 0,
+    "lng": 0,
+    "distKm": 54600000
+  },
+  {
+    "name": "土星",
+    "country": "Space",
+    "zone": "planet",
+    "lat": 0,
+    "lng": 0,
+    "distKm": 1200000000
+  },
+  {
+    "name": "太阳",
+    "country": "Space",
+    "zone": "space",
+    "lat": 0,
+    "lng": 0,
+    "distKm": 147100000
   }
 ]
