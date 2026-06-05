@@ -78,7 +78,7 @@ class _HomeHeaderSection extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          '你好，${identity.name}',
+          '您好，',
           style: textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w700,
             fontSize: 22,
@@ -86,6 +86,16 @@ class _HomeHeaderSection extends ConsumerWidget {
             letterSpacing: -0.14,
           ),
         ),
+        Text(
+          identity.name,
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            fontSize: 22,
+            color: tokens.tabBarActive,
+            letterSpacing: -0.14,
+          ),
+        ),
+        const Spacer(),
         IconButton(
           onPressed: onToggleTheme,
           icon: Icon(Icons.brightness_6_outlined, color: tokens.textSecondary),

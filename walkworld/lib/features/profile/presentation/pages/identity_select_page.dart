@@ -19,7 +19,7 @@ class IdentitySelectPage extends ConsumerWidget {
     final currentIdentity = ref.watch(identityProvider);
 
     return Scaffold(
-      backgroundColor: tokens.profilePageBackground,
+      backgroundColor: tokens.surfacePrimary,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -28,28 +28,31 @@ class IdentitySelectPage extends ConsumerWidget {
             _IdentityAppBar(tokens: tokens),
             // ── 身份列表 ──
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                itemCount: allIdentities.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  final identity = allIdentities[index];
-                  final isSelected = identity.name == currentIdentity.name;
+              child: Container(
+                color: tokens.profilePageBackground,
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  itemCount: allIdentities.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final identity = allIdentities[index];
+                    final isSelected = identity.name == currentIdentity.name;
 
-                  return _IdentityCard(
-                    identity: identity,
-                    isSelected: isSelected,
-                    onTap: () {
-                      ref
-                          .read(identityProvider.notifier)
-                          .selectIdentity(identity);
-                      Navigator.pop(context);
-                    },
-                  );
-                },
+                    return _IdentityCard(
+                      identity: identity,
+                      isSelected: isSelected,
+                      onTap: () {
+                        ref
+                            .read(identityProvider.notifier)
+                            .selectIdentity(identity);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ],
