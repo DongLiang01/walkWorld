@@ -6,6 +6,7 @@ import '../../../../app/svg/app_svg_icon.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
 import '../../../../main.dart';
 import '../../../profile/application/goal_route_provider.dart';
+import '../../../profile/application/identity_provider.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 首页
@@ -62,42 +63,28 @@ class HomePage extends ConsumerWidget {
 // 页面头部
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _HomeHeaderSection extends StatelessWidget {
+class _HomeHeaderSection extends ConsumerWidget {
   const _HomeHeaderSection({required this.onToggleTheme});
 
   final VoidCallback onToggleTheme;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final textTheme = Theme.of(context).textTheme;
+    final identity = ref.watch(identityProvider);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '虚拟旅程',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: 22,
-                color: tokens.textPrimary,
-                letterSpacing: -0.14,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '把运动距离转换成地球上的旅行进度',
-              style: textTheme.bodySmall?.copyWith(
-                color: tokens.textSecondary,
-                fontSize: 12,
-                letterSpacing: -0.18,
-              ),
-            ),
-          ],
+        Text(
+          '你好，${identity.name}',
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            fontSize: 22,
+            color: tokens.textPrimary,
+            letterSpacing: -0.14,
+          ),
         ),
         IconButton(
           onPressed: onToggleTheme,
