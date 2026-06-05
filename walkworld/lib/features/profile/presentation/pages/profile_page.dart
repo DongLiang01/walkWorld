@@ -124,9 +124,7 @@ class _ProfileIdentitySection extends ConsumerWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const IdentitySelectPage(),
-          ),
+          MaterialPageRoute(builder: (context) => const IdentitySelectPage()),
         );
       },
       behavior: HitTestBehavior.opaque,
@@ -287,10 +285,12 @@ class _ProfileCurrentGoalSection extends ConsumerWidget {
                 children: [
                   _DottedLine(color: tokens.profileTextSecondary),
                   const SizedBox(width: 16),
-                  GestureDetector(
-                    onTap: () => ref.read(goalRouteProvider.notifier).swapRoute(),
-                    child: _SwapButton(tokens: tokens),
-                  ),
+                  if (identity.isDomestic)
+                    GestureDetector(
+                      onTap: () =>
+                          ref.read(goalRouteProvider.notifier).swapRoute(),
+                      child: _SwapButton(tokens: tokens),
+                    ),
                 ],
               ),
             ),
@@ -348,9 +348,7 @@ class _FixedRouteLabel extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
             border: Border.all(color: iconBorder),
           ),
-          child: Center(
-            child: AppSvgIcon(iconAsset, width: 12, height: 12),
-          ),
+          child: Center(child: AppSvgIcon(iconAsset, width: 12, height: 12)),
         ),
         const SizedBox(width: 12),
         Text(

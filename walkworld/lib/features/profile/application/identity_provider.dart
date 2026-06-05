@@ -11,6 +11,7 @@ class IdentityItem {
     required this.name,
     required this.iconName,
     this.isGlobal = false,
+    this.isDomestic = false,
     this.originZones = const ['domestic'],
     this.destZones = const ['domestic'],
     this.defaultOrigin = '北京',
@@ -27,6 +28,9 @@ class IdentityItem {
 
   /// 是否为环球旅行家身份（环绕地球一周模式）
   final bool isGlobal;
+
+  /// 是否为旅行达人身份
+  final bool isDomestic;
 
   /// 出发地可选 zone 列表
   final List<String> originZones;
@@ -60,6 +64,7 @@ const List<IdentityItem> allIdentities = [
     destZones: ['domestic'],
     defaultOrigin: '北京',
     defaultDest: '上海',
+    isDomestic: true,
   ),
   IdentityItem(
     name: '亚洲探索者',
