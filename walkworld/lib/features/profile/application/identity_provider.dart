@@ -7,13 +7,20 @@ import '../data/goal_route_preferences_repository.dart';
 
 /// 单个身份条目
 class IdentityItem {
-  const IdentityItem({required this.name, required this.iconName});
+  const IdentityItem({
+    required this.name,
+    required this.iconName,
+    this.isGlobal = false,
+  });
 
   /// 身份名称（如 "旅行达人"）
   final String name;
 
   /// 对应的 SVG 图标文件名（不含路径和扩展名）
   final String iconName;
+
+  /// 是否为环球旅行家身份（环绕地球一周模式）
+  final bool isGlobal;
 }
 
 /// 所有可选身份列表（顺序即展示顺序）
@@ -21,7 +28,7 @@ const List<IdentityItem> allIdentities = [
   IdentityItem(name: '旅行达人', iconName: 'rank_traveler'),
   IdentityItem(name: '亚洲探索者', iconName: 'rank_asia'),
   IdentityItem(name: '洲际探索者', iconName: 'rank_intercontinental'),
-  IdentityItem(name: '环球旅行家', iconName: 'rank_global'),
+  IdentityItem(name: '环球旅行家', iconName: 'rank_global', isGlobal: true),
   IdentityItem(name: '宇航训练员', iconName: 'rank_trainee'),
   IdentityItem(name: '登月1号宇航员', iconName: 'rank_moon_mission'),
   IdentityItem(name: '星际殖民者', iconName: 'rank_colonial'),

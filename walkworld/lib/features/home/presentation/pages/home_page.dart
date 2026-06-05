@@ -117,12 +117,16 @@ class _CurrentTargetCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final textTheme = Theme.of(context).textTheme;
+    final identity = ref.watch(identityProvider);
     final route = ref.watch(goalRouteProvider);
-    final originCity = route.originCity.name;
-    final destinationCity = route.destinationCity.name;
     //获取出发地和目的地
     final distanceRoute = ref.watch(routeDistanceInfoProvider).asData?.value;
     final percent = ((distanceRoute?.ratio ?? 0) * 100).toInt();
+
+    // 环球旅行家模式展示「环绕地球一周」，其他身份展示城市路线
+    final targetLabel = identity.isGlobal
+        ? '环绕地球一周'
+        : '${route.originCity.name} → ${route.destinationCity.name}';
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -143,7 +147,7 @@ class _CurrentTargetCard extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '$originCity → $destinationCity',
+                targetLabel,
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: tokens.textPrimary,
@@ -268,6 +272,7 @@ class _ProgressCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final textTheme = Theme.of(context).textTheme;
+    final identity = ref.watch(identityProvider);
     //获取出发地和目的地
     final route = ref.watch(routeDistanceInfoProvider).asData?.value;
     final goalRoute = ref.watch(goalRouteProvider);
@@ -330,40 +335,52 @@ class _ProgressCard extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
-          // 起终点标签行
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // 起点
-              Row(
-                children: [
-                  _ProgressDot(color: tokens.tabBarActive),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$originCityName 起点',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: tokens.textSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
+          // 环球旅行家模式：进度条下方只展示「环绕地球一周」文案
+          if (identity.isGlobal)
+            Center(
+              child: Text(
+                '环绕地球一周',
+                style: textTheme.bodySmall?.copyWith(
+                  color: tokens.textSecondary,
+                  fontSize: 11,
+                ),
               ),
-              // 终点
-              Row(
-                children: [
-                  Text(
-                    '$destinationCityName 终点',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: tokens.textSecondary,
-                      fontSize: 11,
+            )
+          // 其他身份：起终点标签行
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // 起点
+                Row(
+                  children: [
+                    _ProgressDot(color: tokens.tabBarActive),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$originCityName 起点',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: tokens.textSecondary,
+                        fontSize: 11,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  _ProgressDot(color: tokens.warning),
-                ],
-              ),
-            ],
-          ),
+                  ],
+                ),
+                // 终点
+                Row(
+                  children: [
+                    Text(
+                      '$destinationCityName 终点',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: tokens.textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    _ProgressDot(color: tokens.warning),
+                  ],
+                ),
+              ],
+            ),
         ],
       ),
     );

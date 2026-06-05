@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../motion/application/motion_history_provider.dart';
 import '../data/goal_route_preferences_repository.dart';
 import 'city_data_provider.dart';
+import 'identity_provider.dart';
 import '../domain/city_model.dart';
 import '../../../../app/utils/geo_utils.dart';
 
@@ -192,14 +193,29 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
   ref,
 ) async {
   final route = ref.watch(goalRouteProvider);
+  final identity = ref.watch(identityProvider);
   final motionStats = await ref.watch(motionHistoryStatsProvider.future);
-  final distMeters = calcGeoDistance(
-    route.originCity.lat,
-    route.originCity.lng,
-    route.destinationCity.lat,
-    route.destinationCity.lng,
-  );
-  final distKm = distMeters / 1000.0;
+
+  // 环球旅行家模式：目标距离固定为地球赤道周长 40,075 km
+  final double distKm;
+  final String originName;
+  final String destName;
+  if (identity.isGlobal) {
+    distKm = 40075.0;
+    originName = '环绕地球一周';
+    destName = '环绕地球一周';
+  } else {
+    final distMeters = calcGeoDistance(
+      route.originCity.lat,
+      route.originCity.lng,
+      route.destinationCity.lat,
+      route.destinationCity.lng,
+    );
+    distKm = distMeters / 1000.0;
+    originName = route.originCity.name;
+    destName = route.destinationCity.name;
+  }
+
   final completedDist = motionStats.totalDistanceMeters / 1000.0;
   final ratio = distKm == 0
       ? 1.0
@@ -208,8 +224,8 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
   final weeklyDistanceKm = motionStats.weeklyDistanceMeters / 1000.0;
   final weeklyDurationHours = motionStats.weeklyDurationSeconds / 3600.0;
   return RouteDistanceInfo(
-    originCityName: route.originCity.name,
-    destinationCityName: route.destinationCity.name,
+    originCityName: originName,
+    destinationCityName: destName,
     distKm: distKm,
     distKmStr: distKm.toStringAsFixed(1), //留1位小数
     completedDist: completedDist,
