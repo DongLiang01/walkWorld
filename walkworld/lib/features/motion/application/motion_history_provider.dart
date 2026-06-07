@@ -32,6 +32,12 @@ final latestMotionDistanceMetersProvider = FutureProvider<double>((ref) async {
   return repository.fetchLatestSessionDistanceMeters();
 });
 
+/// 本月累计运动时长，单位秒。
+final monthlyMotionDurationSecondsProvider = FutureProvider<int>((ref) async {
+  final repository = ref.watch(motionHistoryRepositoryProvider);
+  return repository.fetchCurrentMonthDurationSeconds();
+});
+
 /// 首页和我的页使用的运动汇总统计。
 final motionHistoryStatsProvider = FutureProvider<MotionHistoryStats>((
   ref,

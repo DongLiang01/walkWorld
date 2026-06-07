@@ -109,6 +109,26 @@ class MotionHistoryRepository {
     return (rows.first['total_distance_meters'] as num?)?.toDouble() ?? 0;
   }
 
+  /// 获取本月累计运动时长，单位秒。
+  Future<int> fetchCurrentMonthDurationSeconds() async {
+    final database = await _openDatabase();
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month);
+    final nextMonthStart = DateTime(now.year, now.month + 1);
+    final rows = await database.rawQuery(
+      '''
+      SELECT SUM(duration_seconds) AS duration_seconds
+      FROM $_recordsTable
+      WHERE end_time >= ? AND end_time < ?
+      ''',
+      [
+        monthStart.millisecondsSinceEpoch,
+        nextMonthStart.millisecondsSinceEpoch,
+      ],
+    );
+    return (rows.first['duration_seconds'] as num?)?.toInt() ?? 0;
+  }
+
   Future<MotionSession?> fetchSession(String sessionId) async {
     final database = await _openDatabase();
     final recordRows = await database.query(

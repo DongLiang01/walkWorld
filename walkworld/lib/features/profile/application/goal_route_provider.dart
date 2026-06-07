@@ -183,6 +183,8 @@ class RouteDistanceInfo {
     required this.latestMotionDistanceKmStr,
     required this.monthlyDistanceKm,
     required this.monthlyDistanceKmStr,
+    required this.monthlyDurationSeconds,
+    required this.monthlyDurationHoursStr,
     required this.monthlySessionCount,
     required this.weeklyDistanceKm,
     required this.weeklyDistanceKmStr,
@@ -216,6 +218,10 @@ class RouteDistanceInfo {
   final double monthlyDistanceKm;
   //本月累计运动距离展示文案，保留1位小数
   final String monthlyDistanceKmStr;
+  //本月累计运动时长，单位秒
+  final int monthlyDurationSeconds;
+  //本月累计运动时长展示文案，单位小时，保留1位小数
+  final String monthlyDurationHoursStr;
   //本月运动次数
   final int monthlySessionCount;
   //本周累计运动距离，单位公里
@@ -243,6 +249,9 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
   final motionStats = await ref.watch(motionHistoryStatsProvider.future);
   final latestMotionDistanceMeters = await ref.watch(
     latestMotionDistanceMetersProvider.future,
+  );
+  final monthlyDurationSeconds = await ref.watch(
+    monthlyMotionDurationSecondsProvider.future,
   );
 
   // 根据身份类型决定目标距离和展示名称
@@ -280,6 +289,7 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
   final weeklyDistanceKm = motionStats.weeklyDistanceMeters / 1000.0;
   final weeklyDurationHours = motionStats.weeklyDurationSeconds / 3600.0;
   final latestMotionDistanceKm = latestMotionDistanceMeters / 1000.0;
+  final monthlyDurationHours = monthlyDurationSeconds / 3600.0;
   return RouteDistanceInfo(
     originCityName: originName,
     destinationCityName: destName,
@@ -294,6 +304,8 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
     latestMotionDistanceKmStr: latestMotionDistanceKm.toStringAsFixed(2),
     monthlyDistanceKm: monthlyDistanceKm,
     monthlyDistanceKmStr: monthlyDistanceKm.toStringAsFixed(2),
+    monthlyDurationSeconds: monthlyDurationSeconds,
+    monthlyDurationHoursStr: monthlyDurationHours.toStringAsFixed(1),
     monthlySessionCount: motionStats.monthlySessionCount,
     weeklyDistanceKm: weeklyDistanceKm,
     weeklyDistanceKmStr: weeklyDistanceKm.toStringAsFixed(2),
