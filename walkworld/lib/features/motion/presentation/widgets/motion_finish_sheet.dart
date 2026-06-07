@@ -8,6 +8,7 @@ import '../../../../app/svg/app_svg_icon.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
 import '../../../profile/application/goal_route_provider.dart';
 import '../../../profile/application/identity_provider.dart';
+import '../../../profile/presentation/pages/motion_history_page.dart';
 import '../../application/application.dart';
 import 'motion_page_support.dart';
 
@@ -243,7 +244,12 @@ class MotionFinishSheet extends ConsumerWidget {
                         borderColor: appTokens.motionModalMutedActionBorder,
                         textColor: appTokens.motionModalMutedActionText,
                         onTap: () {
-                          // TODO: 查看记录
+                          Navigator.of(context).pop(); // 关闭弹窗
+                          Navigator.of(context, rootNavigator: true).push(
+                            MaterialPageRoute(
+                              builder: (context) => const MotionHistoryPage(),
+                            ),
+                          );
                         },
                       ),
                     ),

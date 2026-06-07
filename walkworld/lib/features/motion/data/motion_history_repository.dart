@@ -83,7 +83,7 @@ class MotionHistoryRepository {
     });
   }
 
-  Future<List<MotionSession>> fetchLatestSessions({int limit = 3}) async {
+  Future<List<MotionSession>> fetchLatestSessions({int? limit = 3}) async {
     final database = await _openDatabase();
     final rows = await database.query(
       _recordsTable,

@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/svg/svg.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
 import '../../../motion/application/motion_history_provider.dart';
-import '../../../motion/models/models.dart';
 import '../../application/goal_route_provider.dart';
 import '../../application/identity_provider.dart';
 import 'city_select_page.dart';
 import 'identity_select_page.dart';
+import 'motion_history_page.dart';
 
 // ─── 页面级常量 ───────────────────────────────────────────────
 /// 卡片通用圆角
@@ -16,9 +16,6 @@ const double _kCardRadius = 16;
 
 /// 区块间距
 const double _kSectionGap = 12;
-
-/// 历史列表条目间距
-const double _kHistoryItemGap = 8;
 
 // ─── 辅助方法 ─────────────────────────────────────────────────
 /// 生成统一卡片 BoxDecoration（防止四处重复手写）
@@ -47,29 +44,6 @@ String _formatDistKm(double distKm) {
     return '${(distKm / 10000).toStringAsFixed(1)} 万 km';
   }
   return '${distKm.toStringAsFixed(1)} km';
-}
-
-// ─── 历史记录数据模型（仅页面内使用）────────────────────────────
-class _HistoryItem {
-  const _HistoryItem({
-    required this.sessionId,
-    required this.iconAsset,
-    required this.iconBgColor,
-    required this.iconBorderColor,
-    required this.type,
-    required this.date,
-    required this.duration,
-    required this.distance,
-  });
-
-  final String sessionId;
-  final String iconAsset;
-  final Color iconBgColor;
-  final Color iconBorderColor;
-  final String type;
-  final String date;
-  final String duration;
-  final String distance;
 }
 
 // ─── 页面入口 ─────────────────────────────────────────────────
@@ -961,12 +935,26 @@ class _ProfileHistorySection extends ConsumerWidget {
                 color: tokens.profileTextPrimary,
               ),
             ),
-            Text(
-              '全部 ›',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: tokens.profileAccentBlue,
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MotionHistoryPage(),
+                  ),
+                );
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                child: Text(
+                  '全部 ›',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: tokens.profileAccentBlue,
+                  ),
+                ),
               ),
             ),
           ],
@@ -975,250 +963,28 @@ class _ProfileHistorySection extends ConsumerWidget {
         historyAsync.when(
           data: (sessions) {
             if (sessions.isEmpty) {
-              return _HistoryEmptyCard(tokens: tokens);
+              return MotionHistoryEmptyCard(tokens: tokens);
             }
 
             final items = sessions
-                .map((session) => _historyItemFromSession(session, tokens))
+                .map((session) => motionHistoryItemFromSession(session, tokens))
                 .toList(growable: false);
 
             return Column(
               children: [
                 for (int i = 0; i < items.length; i++) ...[
-                  if (i > 0) const SizedBox(height: _kHistoryItemGap),
-                  _HistoryCard(item: items[i]),
+                  if (i > 0) const SizedBox(height: motionHistoryItemGap),
+                  MotionHistoryCard(item: items[i]),
                 ],
               ],
             );
           },
-          loading: () => _HistoryStatusCard(tokens: tokens, text: '历史记录加载中…'),
-          error: (_, _) => _HistoryStatusCard(tokens: tokens, text: '历史记录加载失败'),
+          loading: () =>
+              MotionHistoryStatusCard(tokens: tokens, text: '历史记录加载中…'),
+          error: (_, _) =>
+              MotionHistoryStatusCard(tokens: tokens, text: '历史记录加载失败'),
         ),
       ],
-    );
-  }
-
-  _HistoryItem _historyItemFromSession(
-    MotionSession session,
-    AppThemeTokens tokens,
-  ) {
-    final motionType = session.motionType ?? MotionType.hiking;
-
-    return _HistoryItem(
-      sessionId: session.sessionId,
-      iconAsset: _historyIconAsset(motionType),
-      iconBgColor: _historyIconBackground(motionType, tokens),
-      iconBorderColor: _historyIconBorder(motionType, tokens),
-      type: motionType.label,
-      date: _formatHistoryDate(session.endTime),
-      duration: _formatHistoryDuration(session.durationSeconds),
-      distance: (session.totalDistanceMeters / 1000).toStringAsFixed(2),
-    );
-  }
-
-  String _historyIconAsset(MotionType motionType) {
-    return switch (motionType) {
-      MotionType.hiking => AppSvgAssets.profile('history_hiking'),
-      MotionType.running => AppSvgAssets.profile('history_running'),
-      MotionType.cycling => AppSvgAssets.profile('history_cycling'),
-    };
-  }
-
-  Color _historyIconBackground(MotionType motionType, AppThemeTokens tokens) {
-    return switch (motionType) {
-      MotionType.hiking => tokens.profileIconBgGreen,
-      MotionType.running => tokens.profileIconBgBlue,
-      MotionType.cycling => tokens.profileIconBgPurple,
-    };
-  }
-
-  Color _historyIconBorder(MotionType motionType, AppThemeTokens tokens) {
-    return switch (motionType) {
-      MotionType.hiking => tokens.profileIconBorderGreen,
-      MotionType.running => tokens.profileIconBorderBlue,
-      MotionType.cycling => tokens.profileIconBorderPurple,
-    };
-  }
-
-  String _formatHistoryDuration(int durationSeconds) {
-    final totalMinutes = (durationSeconds / 60).round();
-    if (totalMinutes < 60) {
-      return '$totalMinutes 分钟';
-    }
-
-    final hours = totalMinutes ~/ 60;
-    final minutes = totalMinutes % 60;
-    if (minutes == 0) {
-      return '$hours 小时';
-    }
-    return '$hours 小时 $minutes 分钟';
-  }
-
-  String _formatHistoryDate(int timestamp) {
-    if (timestamp <= 0) {
-      return '--';
-    }
-
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final recordDay = DateTime(date.year, date.month, date.day);
-    final timeText =
-        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-
-    if (recordDay == today) {
-      return '今天 $timeText';
-    }
-    if (recordDay == today.subtract(const Duration(days: 1))) {
-      return '昨天 $timeText';
-    }
-    return '${date.month}月${date.day}日 $timeText';
-  }
-}
-
-class _HistoryEmptyCard extends StatelessWidget {
-  const _HistoryEmptyCard({required this.tokens});
-
-  final AppThemeTokens tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    return _HistoryStatusCard(tokens: tokens, text: '暂无运动记录');
-  }
-}
-
-class _HistoryStatusCard extends StatelessWidget {
-  const _HistoryStatusCard({required this.tokens, required this.text});
-
-  final AppThemeTokens tokens;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-      decoration: _profileCardDecoration(tokens),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: tokens.profileTextSecondary,
-        ),
-      ),
-    );
-  }
-}
-
-/// 单条历史记录卡片
-class _HistoryCard extends StatelessWidget {
-  const _HistoryCard({required this.item});
-
-  final _HistoryItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<AppThemeTokens>()!;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: _profileCardDecoration(tokens),
-      child: Row(
-        children: [
-          // 运动类型图标
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: item.iconBgColor,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: item.iconBorderColor),
-            ),
-            child: Center(
-              child: AppSvgIcon(item.iconAsset, width: 20, height: 20),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // 类型 + 日期 + 时长
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 类型 · 日期
-                Row(
-                  children: [
-                    Text(
-                      item.type,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: tokens.profileTextPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    // 分隔小圆点
-                    Container(
-                      width: 3,
-                      height: 3,
-                      decoration: BoxDecoration(
-                        color: tokens.profileTextSecondary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        item.date,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w400,
-                          color: tokens.profileTextSecondary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                // 时长
-                Text(
-                  item.duration,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
-                    color: tokens.profileTextSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // 右侧距离
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                item.distance,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: tokens.profileTextPrimary,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'km',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: tokens.profileTextSecondary,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

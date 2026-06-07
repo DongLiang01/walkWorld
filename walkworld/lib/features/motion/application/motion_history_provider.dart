@@ -18,6 +18,14 @@ final latestMotionSessionsProvider = FutureProvider<List<MotionSession>>((
   return repository.fetchLatestSessions(limit: 3);
 });
 
+/// 运动历史列表页使用的全部运动记录。
+final allMotionSessionsProvider = FutureProvider<List<MotionSession>>((
+  ref,
+) async {
+  final repository = ref.watch(motionHistoryRepositoryProvider);
+  return repository.fetchLatestSessions(limit: null);
+});
+
 /// 首页和我的页使用的运动汇总统计。
 final motionHistoryStatsProvider = FutureProvider<MotionHistoryStats>((
   ref,

@@ -321,6 +321,7 @@ class MotionController extends Notifier<MotionState> {
     try {
       await ref.read(motionHistoryRepositoryProvider).saveSession(session);
       ref.invalidate(latestMotionSessionsProvider);
+      ref.invalidate(allMotionSessionsProvider);
       ref.invalidate(motionHistoryStatsProvider);
       return null;
     } catch (error) {
