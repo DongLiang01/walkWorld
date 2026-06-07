@@ -631,7 +631,7 @@ class _ProfileJourneySection extends ConsumerWidget {
     final distKm = route?.distKm ?? 0.0;
     final completedDist = route?.completedDist ?? 0.0;
     final progress = route?.ratio ?? 0.0;
-    final percent = (progress * 100).toInt();
+    final percent = (progress * 100).toStringAsFixed(1);
     final remainingDist = distKm > completedDist ? distKm - completedDist : 0.0;
 
     final identity = ref.watch(identityProvider);
@@ -737,7 +737,7 @@ class _JourneyPercentLabel extends StatelessWidget {
   const _JourneyPercentLabel({required this.tokens, required this.percent});
 
   final AppThemeTokens tokens;
-  final int percent;
+  final String percent;
 
   @override
   Widget build(BuildContext context) {
@@ -746,7 +746,7 @@ class _JourneyPercentLabel extends StatelessWidget {
       textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
-          '$percent',
+          percent,
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.w800,
@@ -928,7 +928,7 @@ class _ProfileHistorySection extends ConsumerWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '历史记录',
+              '运动记录',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,

@@ -121,7 +121,7 @@ class _CurrentTargetCard extends ConsumerWidget {
     final route = ref.watch(goalRouteProvider);
     //获取出发地和目的地
     final distanceRoute = ref.watch(routeDistanceInfoProvider).asData?.value;
-    final percent = ((distanceRoute?.ratio ?? 0) * 100).toInt();
+    final percent = ((distanceRoute?.ratio ?? 0) * 100).toStringAsFixed(1);
 
     // 根据身份类型决定目标展示文案
     final String targetLabel;
