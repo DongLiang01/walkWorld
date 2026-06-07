@@ -21,38 +21,56 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
+    final identity = ref.watch(identityProvider);
 
     return Scaffold(
       backgroundColor: tokens.homePageBackground,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _HomeHeaderSection(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 16,
+                right: 16,
+                top: 30,
+                bottom: 20,
+              ),
+              child: _HomeHeaderSection(
                 onToggleTheme: () {
                   ref
                       .read(themeModeProvider.notifier)
                       .toggleForTest(Theme.of(context).brightness);
                 },
               ),
-              const SizedBox(height: 24),
-              const _CurrentTargetCard(),
-              const SizedBox(height: 12),
-              const _MapCard(),
-              const SizedBox(height: 12),
-              const _ProgressCard(),
-              const SizedBox(height: 12),
-              const Row(
-                children: [
-                  Expanded(child: _TotalTravelCard()),
-                  SizedBox(width: 12),
-                  Expanded(child: _WeeklyExerciseCard()),
-                ],
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _CurrentTargetCard(),
+                    const SizedBox(height: 12),
+                    if (!identity.isGlobal)
+                      _DestinationLookButton(),
+                    if (!identity.isGlobal)
+                      const SizedBox(height: 12),
+                    const _MapCard(),
+                    const SizedBox(height: 12),
+                    const _ProgressCard(),
+                    const SizedBox(height: 12),
+                    const Row(
+                      children: [
+                        Expanded(child: _TotalTravelCard()),
+                        SizedBox(width: 12),
+                        Expanded(child: _WeeklyExerciseCard()),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -184,6 +202,36 @@ class _CurrentTargetCard extends ConsumerWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 目的地一览卡片
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DestinationLookButton extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = Theme.of(context).extension<AppThemeTokens>()!;
+
+    return _HomeCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: GestureDetector(
+        onTap: () => {},
+        child: Row(
+          children: [
+            Text(
+              '去目的地看看',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: tokens.tabBarActive,
+                fontSize: 15,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
