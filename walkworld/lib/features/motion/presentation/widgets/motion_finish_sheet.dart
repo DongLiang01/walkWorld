@@ -141,7 +141,7 @@ class MotionFinishSheet extends ConsumerWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      '完成本次运动',
+                      '完成本次旅途',
                       style: TextStyle(
                         color: appTokens.textPrimary,
                         fontSize: 15,
@@ -151,7 +151,7 @@ class MotionFinishSheet extends ConsumerWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      '你的运动距离已同步推进虚拟旅程',
+                      '您的旅途距离已同步推进当前旅程',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: appTokens.motionModalDescription,

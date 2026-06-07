@@ -38,6 +38,12 @@ final monthlyMotionDurationSecondsProvider = FutureProvider<int>((ref) async {
   return repository.fetchCurrentMonthDurationSeconds();
 });
 
+/// 累计运动时长，单位秒。
+final totalMotionDurationSecondsProvider = FutureProvider<int>((ref) async {
+  final repository = ref.watch(motionHistoryRepositoryProvider);
+  return repository.fetchTotalDurationSeconds();
+});
+
 /// 首页和我的页使用的运动汇总统计。
 final motionHistoryStatsProvider = FutureProvider<MotionHistoryStats>((
   ref,

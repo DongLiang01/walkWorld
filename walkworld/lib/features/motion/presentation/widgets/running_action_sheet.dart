@@ -312,7 +312,7 @@ class _ActionsRow extends StatelessWidget {
                       ),
                       SizedBox(width: 4),
                       Text(
-                        '结束运动',
+                        '结束旅途',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,

@@ -178,6 +178,8 @@ class RouteDistanceInfo {
     required this.completedDistStr,
     required this.ratio,
     required this.totalDistanceMeters,
+    required this.totalDurationSeconds,
+    required this.totalDurationHoursStr,
     required this.latestMotionDistanceMeters,
     required this.latestMotionDistanceKm,
     required this.latestMotionDistanceKmStr,
@@ -208,6 +210,10 @@ class RouteDistanceInfo {
   final double ratio;
   //历史累计运动距离，单位米
   final double totalDistanceMeters;
+  //历史累计运动时长，单位秒
+  final int totalDurationSeconds;
+  //历史累计运动时长展示文案，单位小时，保留1位小数
+  final String totalDurationHoursStr;
   //最近一次运动距离，单位米
   final double latestMotionDistanceMeters;
   //最近一次运动距离，单位公里
@@ -253,6 +259,9 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
   final monthlyDurationSeconds = await ref.watch(
     monthlyMotionDurationSecondsProvider.future,
   );
+  final totalDurationSeconds = await ref.watch(
+    totalMotionDurationSecondsProvider.future,
+  );
 
   // 根据身份类型决定目标距离和展示名称
   final double distKm;
@@ -290,6 +299,7 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
   final weeklyDurationHours = motionStats.weeklyDurationSeconds / 3600.0;
   final latestMotionDistanceKm = latestMotionDistanceMeters / 1000.0;
   final monthlyDurationHours = monthlyDurationSeconds / 3600.0;
+  final totalDurationHours = totalDurationSeconds / 3600.0;
   return RouteDistanceInfo(
     originCityName: originName,
     destinationCityName: destName,
@@ -299,6 +309,8 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
     completedDistStr: completedDist.toStringAsFixed(2),
     ratio: ratio,
     totalDistanceMeters: motionStats.totalDistanceMeters,
+    totalDurationSeconds: totalDurationSeconds,
+    totalDurationHoursStr: totalDurationHours.toStringAsFixed(1),
     latestMotionDistanceMeters: latestMotionDistanceMeters,
     latestMotionDistanceKm: latestMotionDistanceKm,
     latestMotionDistanceKmStr: latestMotionDistanceKm.toStringAsFixed(2),

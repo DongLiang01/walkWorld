@@ -129,6 +129,16 @@ class MotionHistoryRepository {
     return (rows.first['duration_seconds'] as num?)?.toInt() ?? 0;
   }
 
+  /// 获取累计运动时长，单位秒。
+  Future<int> fetchTotalDurationSeconds() async {
+    final database = await _openDatabase();
+    final rows = await database.rawQuery('''
+      SELECT SUM(duration_seconds) AS duration_seconds
+      FROM $_recordsTable
+      ''');
+    return (rows.first['duration_seconds'] as num?)?.toInt() ?? 0;
+  }
+
   Future<MotionSession?> fetchSession(String sessionId) async {
     final database = await _openDatabase();
     final recordRows = await database.query(

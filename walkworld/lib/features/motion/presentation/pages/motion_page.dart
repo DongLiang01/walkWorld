@@ -321,12 +321,12 @@ class _MotionPageState extends ConsumerState<MotionPage> {
         return AlertDialog(
           title: const Center(
             child: Text(
-              '运动距离过短',
+              '旅途距离过短',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
           ),
           content: const Text(
-            '由于本次运动过短，将不会被记录',
+            '由于本次旅途过短，将不会被记录',
             style: TextStyle(fontSize: 13),
           ),
           actions: [

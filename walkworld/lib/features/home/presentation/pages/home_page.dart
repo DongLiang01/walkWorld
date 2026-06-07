@@ -46,9 +46,9 @@ class HomePage extends ConsumerWidget {
               const SizedBox(height: 12),
               const Row(
                 children: [
-                  Expanded(child: _WeeklyExerciseCard()),
-                  SizedBox(width: 12),
                   Expanded(child: _TotalTravelCard()),
+                  SizedBox(width: 12),
+                  Expanded(child: _WeeklyExerciseCard()),
                 ],
               ),
             ],
@@ -423,11 +423,11 @@ class _WeeklyExerciseCard extends ConsumerWidget {
         children: [
           _CardIconTitle(
             svgPath: isDark
-                ? AppSvgAssets.home('week_exercise_night')
-                : AppSvgAssets.home('week_exercise_day'),
+                ? AppSvgAssets.home('total_travel_night')
+                : AppSvgAssets.home('total_travel_day'),
             iconBg: tokens.homeIconBgBlue,
             iconBorder: tokens.homeIconBorderBlue,
-            title: '本周运动',
+            title: '旅途时长',
             titleStyle: textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w500,
               color: tokens.textSecondary,
@@ -441,7 +441,7 @@ class _WeeklyExerciseCard extends ConsumerWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                route?.weeklyDistanceKmStr ?? '0.0',
+                route?.totalDurationHoursStr ?? '0.0',
                 style: textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: tokens.textPrimary,
@@ -450,7 +450,7 @@ class _WeeklyExerciseCard extends ConsumerWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                'km',
+                'h',
                 style: textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: tokens.textSecondary,
@@ -461,7 +461,7 @@ class _WeeklyExerciseCard extends ConsumerWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '↑ 较上周 +8%',
+            '本月 ${route?.monthlyDurationHoursStr ?? '0.0'} h',
             style: textTheme.labelSmall?.copyWith(
               color: tokens.success,
               fontWeight: FontWeight.w500,
@@ -495,8 +495,8 @@ class _TotalTravelCard extends ConsumerWidget {
         children: [
           _CardIconTitle(
             svgPath: isDark
-                ? AppSvgAssets.home('total_travel_night')
-                : AppSvgAssets.home('total_travel_day'),
+                ? AppSvgAssets.home('week_exercise_night')
+                : AppSvgAssets.home('week_exercise_day'),
             iconBg: tokens.homeIconBgPurple,
             iconBorder: tokens.homeIconBorderPurple,
             title: '累计旅途',
