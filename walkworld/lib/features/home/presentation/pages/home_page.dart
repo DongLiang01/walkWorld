@@ -215,6 +215,10 @@ class _DestinationLookButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final svgPath = isDark
+                  ? AppSvgAssets.home('arrow_right_night')
+                  : AppSvgAssets.home('arrow_right_day');
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -229,6 +233,12 @@ class _DestinationLookButton extends ConsumerWidget {
                 color: tokens.tabBarActive,
                 fontSize: 15,
               ),
+            ),
+            const Spacer(),
+            AppSvgIcon(
+              svgPath, 
+              size: 20,
+              color: tokens.tabBarActive,
             ),
           ],
         ),
