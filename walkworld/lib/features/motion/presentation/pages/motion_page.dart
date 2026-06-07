@@ -31,6 +31,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
   MotionMapNativeController? _mapController;
   bool _isFinishSheetVisible = false;
   bool _isErrorDialogVisible = false;
+  bool _isShortWorkoutDialogVisible = false;
   String? _lastPresentedErrorKey;
 
   @override
@@ -230,8 +231,14 @@ class _MotionPageState extends ConsumerState<MotionPage> {
 
     final previousStatus = previous?.status;
     final nextStatus = next.status;
+    final didReceiveFinishedSummary =
+        nextStatus == MotionStatus.finished &&
+        (previousStatus != MotionStatus.finished ||
+            previous?.isFinishing == true ||
+            previous?.finishedSession != next.finishedSession ||
+            previous?.isShortWorkoutDiscarded != next.isShortWorkoutDiscarded);
 
-    if (previousStatus == nextStatus) {
+    if (previousStatus == nextStatus && !didReceiveFinishedSummary) {
       return;
     }
 
@@ -239,18 +246,30 @@ class _MotionPageState extends ConsumerState<MotionPage> {
         nextStatus == MotionStatus.paused) {
       _lastPresentedErrorKey = null;
       _dismissFinishSheetIfNeeded();
+      _dismissShortWorkoutDialogIfNeeded();
       return;
     }
 
     if (nextStatus == MotionStatus.finished) {
+      if (next.isFinishing) {
+        return;
+      }
+
       _lastPresentedErrorKey = null;
       _dismissErrorDialogIfNeeded();
-      _showFinishSheetIfNeeded();
+      if (next.isShortWorkoutDiscarded) {
+        _dismissFinishSheetIfNeeded();
+        _showShortWorkoutDialogIfNeeded();
+      } else {
+        _dismissShortWorkoutDialogIfNeeded();
+        _showFinishSheetIfNeeded();
+      }
       return;
     }
 
     if (nextStatus == MotionStatus.error) {
       _dismissFinishSheetIfNeeded();
+      _dismissShortWorkoutDialogIfNeeded();
       _showErrorDialogIfNeeded(next);
       return;
     }
@@ -258,6 +277,7 @@ class _MotionPageState extends ConsumerState<MotionPage> {
     if (nextStatus == MotionStatus.idle) {
       _lastPresentedErrorKey = null;
       _dismissErrorDialogIfNeeded();
+      _dismissShortWorkoutDialogIfNeeded();
     }
   }
 
@@ -282,6 +302,52 @@ class _MotionPageState extends ConsumerState<MotionPage> {
 
   void _dismissFinishSheetIfNeeded() {
     if (!_isFinishSheetVisible) {
+      return;
+    }
+
+    unawaited(Navigator.of(context, rootNavigator: true).maybePop());
+  }
+
+  void _showShortWorkoutDialogIfNeeded() {
+    if (_isShortWorkoutDialogVisible) {
+      return;
+    }
+
+    _isShortWorkoutDialogVisible = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Center(
+            child: Text(
+              '运动距离过短',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+          ),
+          content: const Text(
+            '由于本次运动过短，将不会被记录',
+            style: TextStyle(fontSize: 13),
+          ),
+          actions: [
+            Center(
+              child: FilledButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                },
+                child: const Text('知道了'),
+              ),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(() {
+      _isShortWorkoutDialogVisible = false;
+    });
+  }
+
+  void _dismissShortWorkoutDialogIfNeeded() {
+    if (!_isShortWorkoutDialogVisible) {
       return;
     }
 

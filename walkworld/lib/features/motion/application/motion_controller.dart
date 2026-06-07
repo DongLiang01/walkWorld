@@ -15,6 +15,8 @@ import 'motion_state.dart';
 /// 2. 监听原生事件流并更新 Flutter 状态
 /// 3. 对外暴露统一的开始、暂停、继续、结束入口
 class MotionController extends Notifier<MotionState> {
+  static const double _minRecordDistanceMeters = 100;
+
   StreamSubscription<MotionChannelEvent>? _eventSubscription;
 
   MotionService get _motionService => ref.read(motionServiceProvider);
@@ -88,6 +90,7 @@ class MotionController extends Notifier<MotionState> {
       finishedSession: null,
       error: null,
       motionType: motionType,
+      isShortWorkoutDiscarded: false,
     );
 
     try {
@@ -199,7 +202,11 @@ class MotionController extends Notifier<MotionState> {
       }
 
       final normalizedSession = _normalizeFinishedSession(result.summary);
-      final saveError = await _saveFinishedSession(normalizedSession);
+      final isShortWorkout =
+          normalizedSession.totalDistanceMeters <= _minRecordDistanceMeters;
+      final saveError = isShortWorkout
+          ? null
+          : await _saveFinishedSession(normalizedSession);
 
       state = state.copyWith(
         status: result.status,
@@ -214,6 +221,7 @@ class MotionController extends Notifier<MotionState> {
         sessionStartTime: normalizedSession.startTime,
         error: saveError,
         isFinishing: false,
+        isShortWorkoutDiscarded: isShortWorkout,
       );
     } catch (error) {
       _setError(

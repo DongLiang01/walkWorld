@@ -20,6 +20,7 @@ class MotionState {
     this.locationServiceEnabled,
     this.motionType,
     this.isFinishing = false,
+    this.isShortWorkoutDiscarded = false,
   });
 
   /// 当前运动状态，是页面渲染和交互的核心依据。
@@ -57,6 +58,11 @@ class MotionState {
   /// 为 `true` 时 UI 层应展示 loading 遮罩，防止用户重复操作。
   final bool isFinishing;
 
+  /// 本次结束的运动是否因距离过短而不入库。
+  ///
+  /// 该字段只影响结束后的提示与历史记录保存，不改变 finished 状态流转。
+  final bool isShortWorkoutDiscarded;
+
   /// 默认初始状态。
   factory MotionState.initial() {
     return const MotionState(
@@ -81,6 +87,7 @@ class MotionState {
     Object? locationServiceEnabled = _unset,
     Object? motionType = _unset,
     bool? isFinishing,
+    bool? isShortWorkoutDiscarded,
   }) {
     return MotionState(
       status: status ?? this.status,
@@ -105,6 +112,8 @@ class MotionState {
           ? this.motionType
           : motionType as MotionType?,
       isFinishing: isFinishing ?? this.isFinishing,
+      isShortWorkoutDiscarded:
+          isShortWorkoutDiscarded ?? this.isShortWorkoutDiscarded,
     );
   }
 }
