@@ -80,10 +80,7 @@ class GoalRouteNotifier extends Notifier<GoalRouteState> {
       destCity = findCityByName(cities, identity.defaultDest);
     }
 
-    return GoalRouteState(
-      originCity: originCity,
-      destinationCity: destCity,
-    );
+    return GoalRouteState(originCity: originCity, destinationCity: destCity);
   }
 
   /// 更新出发城市
@@ -181,6 +178,9 @@ class RouteDistanceInfo {
     required this.completedDistStr,
     required this.ratio,
     required this.totalDistanceMeters,
+    required this.latestMotionDistanceMeters,
+    required this.latestMotionDistanceKm,
+    required this.latestMotionDistanceKmStr,
     required this.monthlyDistanceKm,
     required this.monthlyDistanceKmStr,
     required this.monthlySessionCount,
@@ -206,6 +206,12 @@ class RouteDistanceInfo {
   final double ratio;
   //历史累计运动距离，单位米
   final double totalDistanceMeters;
+  //最近一次运动距离，单位米
+  final double latestMotionDistanceMeters;
+  //最近一次运动距离，单位公里
+  final double latestMotionDistanceKm;
+  //最近一次运动距离展示文案，保留1位小数
+  final String latestMotionDistanceKmStr;
   //本月累计运动距离，单位公里
   final double monthlyDistanceKm;
   //本月累计运动距离展示文案，保留1位小数
@@ -235,6 +241,9 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
   final route = ref.watch(goalRouteProvider);
   final identity = ref.watch(identityProvider);
   final motionStats = await ref.watch(motionHistoryStatsProvider.future);
+  final latestMotionDistanceMeters = await ref.watch(
+    latestMotionDistanceMetersProvider.future,
+  );
 
   // 根据身份类型决定目标距离和展示名称
   final double distKm;
@@ -270,22 +279,26 @@ final routeDistanceInfoProvider = FutureProvider<RouteDistanceInfo>((
   final monthlyDistanceKm = motionStats.monthlyDistanceMeters / 1000.0;
   final weeklyDistanceKm = motionStats.weeklyDistanceMeters / 1000.0;
   final weeklyDurationHours = motionStats.weeklyDurationSeconds / 3600.0;
+  final latestMotionDistanceKm = latestMotionDistanceMeters / 1000.0;
   return RouteDistanceInfo(
     originCityName: originName,
     destinationCityName: destName,
     distKm: distKm,
-    distKmStr: distKm.toStringAsFixed(1), //留1位小数
+    distKmStr: distKm.toStringAsFixed(2), //留1位小数
     completedDist: completedDist,
-    completedDistStr: completedDist.toStringAsFixed(1),
+    completedDistStr: completedDist.toStringAsFixed(2),
     ratio: ratio,
     totalDistanceMeters: motionStats.totalDistanceMeters,
+    latestMotionDistanceMeters: latestMotionDistanceMeters,
+    latestMotionDistanceKm: latestMotionDistanceKm,
+    latestMotionDistanceKmStr: latestMotionDistanceKm.toStringAsFixed(2),
     monthlyDistanceKm: monthlyDistanceKm,
-    monthlyDistanceKmStr: monthlyDistanceKm.toStringAsFixed(1),
+    monthlyDistanceKmStr: monthlyDistanceKm.toStringAsFixed(2),
     monthlySessionCount: motionStats.monthlySessionCount,
     weeklyDistanceKm: weeklyDistanceKm,
-    weeklyDistanceKmStr: weeklyDistanceKm.toStringAsFixed(1),
+    weeklyDistanceKmStr: weeklyDistanceKm.toStringAsFixed(2),
     weeklyDurationSeconds: motionStats.weeklyDurationSeconds,
-    weeklyDurationHoursStr: weeklyDurationHours.toStringAsFixed(1),
+    weeklyDurationHoursStr: weeklyDurationHours.toStringAsFixed(2),
     weeklySessionCount: motionStats.weeklySessionCount,
     currentStreakDays: motionStats.currentStreakDays,
     longestStreakDays: motionStats.longestStreakDays,

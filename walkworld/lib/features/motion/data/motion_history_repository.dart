@@ -94,6 +94,21 @@ class MotionHistoryRepository {
     return rows.map(_sessionFromRecordRow).toList(growable: false);
   }
 
+  /// 获取最近一次运动距离，单位米；没有历史记录时返回 0。
+  Future<double> fetchLatestSessionDistanceMeters() async {
+    final database = await _openDatabase();
+    final rows = await database.query(
+      _recordsTable,
+      columns: const ['total_distance_meters'],
+      orderBy: 'end_time DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return 0;
+    }
+    return (rows.first['total_distance_meters'] as num?)?.toDouble() ?? 0;
+  }
+
   Future<MotionSession?> fetchSession(String sessionId) async {
     final database = await _openDatabase();
     final recordRows = await database.query(

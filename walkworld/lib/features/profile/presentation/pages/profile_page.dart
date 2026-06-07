@@ -38,12 +38,12 @@ BoxDecoration _profileCardDecoration(AppThemeTokens tokens) {
 String _formatDistKm(double distKm) {
   if (distKm >= 100000000) {
     // 亿级：如 1.5 亿 km
-    return '${(distKm / 100000000).toStringAsFixed(1)} 亿 km';
+    return '${(distKm / 100000000).toStringAsFixed(2)} 亿 km';
   } else if (distKm >= 10000) {
     // 万级：如 38.4 万 km
-    return '${(distKm / 10000).toStringAsFixed(1)} 万 km';
+    return '${(distKm / 10000).toStringAsFixed(2)} 万 km';
   }
-  return '${distKm.toStringAsFixed(1)} km';
+  return '${distKm.toStringAsFixed(2)} km';
 }
 
 // ─── 页面入口 ─────────────────────────────────────────────────
@@ -501,8 +501,8 @@ class _ProfileStatsSection extends ConsumerWidget {
             title: '累计距离',
             value: route?.completedDistStr ?? '0.0',
             unit: 'km',
-            subtitle: '↑ +18%',
-            subtitleColor: tokens.profileAccentBlue,
+            subtitle: '最新 ${route?.latestMotionDistanceKm.toStringAsFixed(2) ?? 0} km',
+            subtitleColor: tokens.profileTextSecondary,
           ),
         ),
         const SizedBox(width: 8),
@@ -606,7 +606,7 @@ class _StatCard extends StatelessWidget {
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: FontWeight.w500,
               color: subtitleColor,
             ),
@@ -671,8 +671,8 @@ class _ProfileJourneySection extends ConsumerWidget {
           // 已完成 / 剩余里程
           _JourneyDistRow(
             tokens: tokens,
-            completedDistText: completedDist.toStringAsFixed(1),
-            remainingDistText: remainingDist.toStringAsFixed(1),
+            completedDistText: completedDist.toStringAsFixed(2),
+            remainingDistText: remainingDist.toStringAsFixed(2),
           ),
         ],
       ),

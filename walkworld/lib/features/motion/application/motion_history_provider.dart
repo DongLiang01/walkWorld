@@ -26,6 +26,12 @@ final allMotionSessionsProvider = FutureProvider<List<MotionSession>>((
   return repository.fetchLatestSessions(limit: null);
 });
 
+/// 最近一次运动距离，单位米。
+final latestMotionDistanceMetersProvider = FutureProvider<double>((ref) async {
+  final repository = ref.watch(motionHistoryRepositoryProvider);
+  return repository.fetchLatestSessionDistanceMeters();
+});
+
 /// 首页和我的页使用的运动汇总统计。
 final motionHistoryStatsProvider = FutureProvider<MotionHistoryStats>((
   ref,

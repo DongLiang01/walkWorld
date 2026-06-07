@@ -526,13 +526,13 @@ class _JourneyProgressCard extends ConsumerWidget {
                       children: [
                         const TextSpan(text: '已走 '),
                         TextSpan(
-                          text: '${completedDist.toStringAsFixed(1)} km',
+                          text: '${completedDist.toStringAsFixed(2)} km',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: appTokens.motionPrimaryActionStart,
                           ),
                         ),
-                        TextSpan(text: ' / ${distKm.toStringAsFixed(1)} km'),
+                        TextSpan(text: ' / ${distKm.toStringAsFixed(2)} km'),
                       ],
                     ),
                   ),
@@ -551,7 +551,7 @@ class _JourneyProgressCard extends ConsumerWidget {
                       children: [
                         const TextSpan(text: '还剩 '),
                         TextSpan(
-                          text: '${remainingDist.toStringAsFixed(1)} km',
+                          text: '${remainingDist.toStringAsFixed(2)} km',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: appTokens.textPrimary,
