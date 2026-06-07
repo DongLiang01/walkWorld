@@ -7,6 +7,7 @@ import '../../../../app/theme/app_theme_tokens.dart';
 import '../../../../main.dart';
 import '../../../profile/application/goal_route_provider.dart';
 import '../../../profile/application/identity_provider.dart';
+import 'destination_webview_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 首页
@@ -51,10 +52,8 @@ class HomePage extends ConsumerWidget {
                   children: [
                     const _CurrentTargetCard(),
                     const SizedBox(height: 12),
-                    if (!identity.isGlobal)
-                      _DestinationLookButton(),
-                    if (!identity.isGlobal)
-                      const SizedBox(height: 12),
+                    if (!identity.isGlobal) _DestinationLookButton(),
+                    if (!identity.isGlobal) const SizedBox(height: 12),
                     const _MapCard(),
                     const SizedBox(height: 12),
                     const _ProgressCard(),
@@ -212,18 +211,33 @@ class _CurrentTargetCard extends ConsumerWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _DestinationLookButton extends ConsumerWidget {
+  const _DestinationLookButton();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<AppThemeTokens>()!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final svgPath = isDark
-                  ? AppSvgAssets.home('arrow_right_night')
-                  : AppSvgAssets.home('arrow_right_day');
+        ? AppSvgAssets.home('arrow_right_night')
+        : AppSvgAssets.home('arrow_right_day');
+    final route = ref.watch(goalRouteProvider);
+    final destination = route.destinationCity.name;
 
     return _HomeCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: GestureDetector(
-        onTap: () => {},
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          final query = Uri.encodeQueryComponent('$destination 风景名胜');
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => DestinationWebViewPage(
+                title: destination,
+                url: 'https://www.baidu.com/s?wd=$query',
+              ),
+            ),
+          );
+        },
         child: Row(
           children: [
             Text(
@@ -235,11 +249,7 @@ class _DestinationLookButton extends ConsumerWidget {
               ),
             ),
             const Spacer(),
-            AppSvgIcon(
-              svgPath, 
-              size: 20,
-              color: tokens.tabBarActive,
-            ),
+            AppSvgIcon(svgPath, size: 20, color: tokens.tabBarActive),
           ],
         ),
       ),

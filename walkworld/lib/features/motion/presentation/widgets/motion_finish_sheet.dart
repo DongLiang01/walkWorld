@@ -206,7 +206,7 @@ class MotionFinishSheet extends ConsumerWidget {
                         child: _MetricCell(
                           value: currentSpeed,
                           unit: 'km/h',
-                          label: '速度',
+                          label: '均速',
                           appTokens: appTokens,
                         ),
                       ),
