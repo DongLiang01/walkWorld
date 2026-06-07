@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/svg/app_svg_icon.dart';
 import '../../../../app/theme/app_theme_tokens.dart';
 import '../../../profile/application/goal_route_provider.dart';
+import '../../../profile/application/identity_provider.dart';
 import '../../application/application.dart';
 import 'motion_page_support.dart';
 
@@ -37,9 +38,6 @@ class MotionFinishSheet extends ConsumerWidget {
     final mediaQuery = MediaQuery.of(context);
     final finishedSession = motionState.finishedSession;
     final realtime = motionState.realtime;
-    final goalRoute = ref.watch(goalRouteProvider);
-    final routeTitle =
-        '${goalRoute.originCity.name} → ${goalRoute.destinationCity.name}';
 
     final durationFormat = formatMotionDuration(
       finishedSession?.durationSeconds ?? realtime?.durationSeconds ?? 0,
@@ -227,7 +225,6 @@ class MotionFinishSheet extends ConsumerWidget {
                   appTokens: appTokens,
                   isDark: isDark,
                   distanceKm: distanceKm,
-                  routeTitle: routeTitle,
                 ),
               ),
               const SizedBox(height: 10.4),
@@ -382,21 +379,27 @@ class _MetricDivider extends StatelessWidget {
   }
 }
 
-class _JourneyProgressCard extends StatelessWidget {
+class _JourneyProgressCard extends ConsumerWidget {
   const _JourneyProgressCard({
     required this.appTokens,
     required this.isDark,
     required this.distanceKm,
-    required this.routeTitle,
   });
 
   final AppThemeTokens appTokens;
   final bool isDark;
   final String distanceKm;
-  final String routeTitle;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final route = ref.watch(routeDistanceInfoProvider).asData?.value;
+    final goalRoute = ref.watch(goalRouteProvider);
+    final distKm = route?.distKm ?? 0.0;
+    final completedDist = route?.completedDist ?? 0.0;
+    final progress = route?.ratio ?? 0.0;
+    final remainingDist = distKm > completedDist ? distKm - completedDist : 0.0;
+    final identity = ref.watch(identityProvider);
+
     return Container(
       //设置背景色圆角等
       decoration: BoxDecoration(
@@ -427,7 +430,9 @@ class _JourneyProgressCard extends StatelessWidget {
                       const SizedBox(width: 5.2),
                       Expanded(
                         child: Text(
-                          routeTitle,
+                          identity.isGlobal
+                              ? '环绕地球一周'
+                              : '${route?.originCityName ?? goalRoute.originCity.name} → ${route?.destinationCityName ?? goalRoute.destinationCity.name}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -476,7 +481,7 @@ class _JourneyProgressCard extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: FractionallySizedBox(
-                  widthFactor: 0.25, // 占位比例
+                  widthFactor: progress, // 占位比例
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(1.95),
@@ -515,13 +520,13 @@ class _JourneyProgressCard extends StatelessWidget {
                       children: [
                         const TextSpan(text: '已走 '),
                         TextSpan(
-                          text: '328 km',
+                          text: '${completedDist.toStringAsFixed(1)} km',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: appTokens.motionPrimaryActionStart,
                           ),
                         ),
-                        const TextSpan(text: ' / 1318 km'),
+                        TextSpan(text: ' / ${distKm.toStringAsFixed(1)} km'),
                       ],
                     ),
                   ),
@@ -540,7 +545,7 @@ class _JourneyProgressCard extends StatelessWidget {
                       children: [
                         const TextSpan(text: '还剩 '),
                         TextSpan(
-                          text: '990 km',
+                          text: '${remainingDist.toStringAsFixed(1)} km',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: appTokens.textPrimary,
