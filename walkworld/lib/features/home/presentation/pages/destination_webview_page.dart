@@ -53,6 +53,7 @@ class _DestinationWebViewPageState extends State<DestinationWebViewPage> {
     return Scaffold(
       backgroundColor: tokens.homePageBackground,
       appBar: AppBar(
+        centerTitle: true,
         title: Text(widget.title, style: TextStyle(fontSize: 16)),
         backgroundColor: tokens.homePageBackground,
         foregroundColor: tokens.textPrimary,

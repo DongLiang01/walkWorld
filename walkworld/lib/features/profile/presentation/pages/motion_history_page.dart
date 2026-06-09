@@ -142,7 +142,7 @@ class MotionHistoryPage extends ConsumerWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          '运动历史',
+          '旅途历史',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
