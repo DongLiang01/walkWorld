@@ -499,9 +499,10 @@ class _ProfileStatsSection extends ConsumerWidget {
             iconBg: tokens.profileIconBgBlue,
             iconBorder: tokens.profileIconBorderBlue,
             title: '本月累计',
-            value: route?.weeklyDistanceKmStr ?? '0.0',
+            value: route?.monthlyDistanceKmStr ?? '0.0',
             unit: 'km',
-            subtitle: '最新 ${route?.latestMotionDistanceKm.toStringAsFixed(2) ?? 0} km',
+            subtitle:
+                '最新 ${route?.latestMotionDistanceKm.toStringAsFixed(2) ?? 0} km',
             subtitleColor: tokens.profileTextSecondary,
           ),
         ),
@@ -578,28 +579,39 @@ class _StatCard extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           // 数值 + 单位（基线对齐）
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: tokens.profileTextPrimary,
+          FittedBox(
+            //只准缩小，不准放大
+            fit: BoxFit.scaleDown,
+            //缩小后左对齐
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  value,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: tokens.profileTextPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 2),
-              Text(
-                unit,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: tokens.profileTextSecondary,
+                const SizedBox(width: 2),
+                Text(
+                  unit,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: tokens.profileTextSecondary,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           // 副标题
